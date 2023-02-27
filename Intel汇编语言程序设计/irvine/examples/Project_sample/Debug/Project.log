@@ -1,0 +1,1 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\BuildCustomizations\masm.targets(36,5): error MSB3491: 未能向文件“Debug\Project.tlog\Masm.read.1u.tlog”写入命令行。未能找到路径“C:\irvine\examples\Project_sample\Debug\Project.tlog\Masm.read.1u.tlog”的一部分。
