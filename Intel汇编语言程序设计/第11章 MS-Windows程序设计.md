@@ -1873,3 +1873,489 @@ END WinMain
 
 当用户关闭了这个消息框以后，程序结束运行。
 
+# 11.3 动态内存分配
+
+动态内存分配也称为堆（内存）分配（Heap Allocation),是程序设计语言提供的一种非常有用的工具，用于为创建的对象、数组和其他结构保留内存。例如，在Java中，类似下面的语句会导致程序为创建的String对象保留内存：
+
+```
+String str=new String("abcde");
+```
+
+类似地，在C++中，可能会需要为一个整数数组分配内存空间，其大小来自于个变量：
+
+```
+int size;
+cin>>size;
+//用户输入的大小
+int array[]=new int[size];
+```
+
+C/C++和Java都有内建的运行时堆管理器，用于处理程序的存储分配和存储释放请求，堆管理器通常在程序启动时请求操作系统分配一大块内存，堆管理器创建一个空闲存储块指针链表在接到分配请求时，把一个合适的内存块标记为保留并返回指向该内存块的指针，其后在接到针对同一内存块的释放请求时，堆管理器把该内存块放回空闲存储块的指针链表中（或释放该内存块）。每次新的分配请求到达时，堆管理器都会首先扫描空闲存储块链表，查找第一个足够大的为存块以满足分配请求。
+汇编语言可通过多种方式进行动态内存分配：第一种方式是通过系统调用让操作系统为其分配内存块，第二种方式是实现字节堆管理器以处理小对象的内存分配请求。本节讲述如何使用一种方法，例子程序都是32位的保护模式应用程序。
+使用表11.11中列出的Windows API函数请求MS-Windows分配不同大小的内存块，表中所有的函数都会改写通用寄存器，因此可能需要封装这些函数以保护重要的寄存器。要想了解更关于内存管理方面的内容，请在Platform SDK文档中搜索“Memory Management Reference”。
+
+![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.c8jln1p0lz4.webp)
+
+### GetProcessHeap:
+
+如果对使用程序当前拥有的默认堆满意，可以使用GetProcessHeap函数，该函数无参数，在EAX中返回默认堆的句柄。函数原型如下：
+
+```
+GetProcessHeap PROTO
+调用示例：
+.data
+hHeap HANDLE ?
+.code
+INVOKE GetProcessHeap
+.IF eax==NULL
+;不能获取句柄
+jmp quit
+.ELSE
+mov hHeap,eax
+;成功获取句柄
+.ENDIF
+;HeapCreate:HeapCreate允许为当前程序创建一个新的私有堆。函数原型如下：
+HeapCreate PROTO,
+f10ptions:DWORD,
+堆分配选项
+dwInitialSize:DWORD,
+堆的初始大小，以字节为单位es
+dwMaximumSize:DWORD
+堆的最大尺寸值，以字节为单位，es
+```
+
+调用时把f1Options设为NULL,把dwInitialSize设置为堆的初始大小，实际的初始大小是该值按页边界向上舍人后的值。当调用HeapAlloc分配内存块时，如果堆的大小超过堆的初始大小，堆将自动增长，上限是dwMaximumSize参数（按页边界向上舍入）指定的值。在调用该函数之后，如果堆未成功创建，则在EAX中返回NULL。下面是调用示例：
+
+```
+HEAP_START=2000000
+;2MB
+HEAP_MAX=400000000
+;400MB
+.data
+hHeap HANDLE?
+;堆的句柄
+.code
+INVOKE HeapCreate,0,HEAP_START,HEAP_MAX
+.IF eax==NULL
+;堆未创建
+call WritewindowsMsg
+;显示错误信息
+jmp quit
+.ELSE
+mov hHeap,eax
+;成功获取句柄
+.ENDIF
+```
+
+### HeapDestroy:
+
+HeapDestroy销毁一个现存的私有堆（通过调用HeapCreate创建的）。调用
+月时传递要销毁的堆的句柄：
+
+```
+.data
+hHeap HANDLE ?
+;堆的句柄
+.code
+INVOKE HeapDestroy, hHeap
+.IF eax == NULL
+call WritewindowsMsg
+;显示错误消息
+.ENDIF
+HeapAlloc:HeapAlloc从堆中分配一块内存。函数原型如下：
+HeapA11oc PROTO,
+hHeap:HANDLE,
+;堆的句柄
+dwFlags:DWORD,
+;堆分配控制标志
+dwBytes:DWORD
+;要分配的字节数
+```
+
+调用时传递下面的参数：
+
+- ·hHeap是通过调用GetProcessHeap或HeapCreate获取的32位堆句柄
+- dwFlags是包含一个或多个标志值的双字，可以把该值设为HEAP_ZERO_MEMORY,此时分配的内存块将以0初始化。
+- dwBytes是表示要分配的内存块大小的双字，大小是以字节为单位计算的。如果调用成功，EAX中返回分配的内存块的指针；
+
+如果调用失败，EAX中返回NULL。下面的代码从hHeap标识的堆中分配1000个字节并以0初始化：
+
+```
+.data
+hHeap HANDLE ?
+;堆句柄
+pArray DWORD ?
+;指向数组的指针
+.code
+INVOKE HeapAlloc,hHeap,HEAP_ZERO_MEMORY,1000
+.IF eax == NULL
+mwrite"HeapAlloc failed"
+jmp quit
+.ELSE
+mov pArray,eax
+.ENDIF
+```
+
+### HeapFree:
+
+HeapFree释放以前从堆中分配的内存块，内存块是以堆句柄和内存块的地址标
+识的：
+
+```
+HeapFree PROTO,
+hHeap:HANDLE,
+dwFlags:DWORD,
+1 pMem : DWORD
+```
+
+第一个参数是包含要释放内存块的堆的句柄，第二个参数通常是0,第三个参数是指向要释放内存块的指针。如果内存块成功释放，返回非0值；如果释放失败，则返回0。下面是调用示例：
+
+```
+INVOKE HeapFree,hHeap,0,pArray
+```
+
+### 错误处理：
+
+如果调用HeapCreate,HeapDestroy,GetProcessHeap时出错，可以调用GetLastError API函数或调用Irvine32库中的WriteWindowsMsg函数获取出错的细节。下面的代码调用了Heap Create函数，其中包含了错误处理代码：
+
+```
+INVOKE HeapCreate, 0, HEAP_START, HEAP_MAX
+IFeax==NULL
+;失败了？
+call writewindowsMsg
+;显示错误消息
+.ELSE
+mov hHeap , eax
+;成功
+.ENDIF
+```
+
+另一方面，当HeapAlloc函数执行失败时，它不设置系统错误代码，因此不能调用GetLastError或WriteWindowsMsg。
+
+## 11.3.1堆测试程序
+
+下面的例子（Heaptestl.asm)使用动态内存分配的方法创建了一个1000字节的数组，使用的是进程的默认堆：
+
+```
+Title Heap Test #1
+(Heaptest1.asm)
+INCLUDE Irvine32.inc
+; This program uses dynamic memory allocation to allocate and
+; fill an array of bytes.
+.data
+ARRAY_SIZE=1000
+FILL_VAL EQU OFFh
+hHeap HANDLE?
+;进程堆的句柄
+pArray DWORD ?
+内存块的指针
+newHeap DWORD ?
+;新堆的句柄
+str1 BYTE"Heap size is:",0
+.code
+main PROC
+INVOKE GetProcessHeap
+;获取程序默认堆的句柄
+.IF eax==NULL
+;失败了？
+call WritewindowsMsg
+jmp quit
+.ELSE
+mov hHeap , eax
+;成功
+.ENDIF
+call allocate_array
+jnc arrayok
+;失败了（CF=1)?
+call WriteWindowsMsg
+call Crlf
+jmp quit
+arrayok:
+;成功，可以填充数组了
+call fill_array
+call display_array
+call Crlf
+; free the array
+INVOKE HeapFree, hHeap, 0, pArray
+quit:
+exit
+main ENDP
+allocate_array PROC USES eax
+; Dynamically allocates space for the array .
+; Receives : nothing
+; Returns : CF = 0 if allocation succeeds .
+INVOKE HeapAlloc, hHeap, HEAP_ZERO_MEMORY, ARRAY_SIZE
+.IF eax==NULL
+stc
+;返回时CF=1
+.ELSE
+mov pArray , eax
+;保存指针
+clc
+;返回时CF=0
+.ENDIF
+ret
+allocate_array ENDP
+fill_array PROC USES ecx edx esi
+; Fills all array positions with a single character .
+; Receives : nothing
+; Returns : nothing
+mov ecx, ARRAY_SIZE
+;循环计数器
+mov esi,pArray
+;指向数组
+L1: mov BYTE PTR [esi], FILL_VAL
+;填充每个字节
+incesi
+;下一个字节
+loop L1
+ret
+fill_array ENDP
+display_array PROC USES eax ebx ecx esi
+; Displays the array
+; Receives : nothing
+; Returns : nothing
+mov ecx,ARRAY_SIZE;循环计数器
+mov esi, pArray
+;指向数组
+L1: mov al,[esi]
+;取一个字节
+mov ebx, TYPE BYTE
+call WriteHexB
+;显示之
+inc esi
+;下一个字节
+loop L1
+ret
+display_array ENDP
+END main
+```
+
+下面的例子（Heaptest2.asm)使用动态内存分配的方法循环分配2000个大约0.5MB的内存块：
+
+```
+Title Heap Test #2
+(Heaptest2.asm)
+INCLUDE Irvine32.inc
+; Creates a heap and allocates multiple memory blocks,
+; expanding the heap until it fails.
+.data
+HEAP_START=2000000
+;2MB
+HEAP_MAX=400000000
+;400MB
+BLOCK_SIZE = 500000
+;.5MB
+hHeap HANDLE ?
+;堆的句柄
+pData DWORD ?
+;内存块指针
+str1 BYTE Odh, Oah, "Memory allocation failed", Odh, Oah, 0
+.code
+main PROC
+INVOKE HeapCreate, 0, HEAP_START, HEAP_MAX
+IFeax==NULL
+;失败了？
+call WritewindowsMsg
+call Crlf
+jmp quit
+.ELSE
+mov hHeap,eax
+;成功
+.ENDIF
+mov ecx,2000
+;循环计数器
+L1: call allocate_block
+;分配一块内存
+.IF Carry?
+;失败了？
+mov edx, OFFSET str1
+;显示出错消息
+call WriteString
+jmp quit
+.ELSE
+;否：打印一个点
+mov al,'.'
+;显示进度
+call WriteChar
+.ENDIF
+;call free_block
+;可以注释/反注释该行观察效果
+loop L1
+quit:
+INVOKE HeapDestroy,hHeap;销毁堆
+.IF eax == NULL
+;失败了？
+call WritewindowsMsg
+;是：显示错误消息
+call Crlf
+.ENDIF
+exit
+main ENDP
+allocate_block PROC USES ecx
+;分配一块内存并以0填充
+INVOKE HeapAlloc,hHeap,HEAP_ZERO_MEMORY,BLOCK_SIZE
+.IF eax==NULL
+stc
+;返回时CF=1
+.ELSE
+mov pData,eax
+;保存指针
+clc
+;返回时CF=0
+.ENDIF
+ret
+allocate_block ENDP
+free_block PROC USES ecx
+INVOKE HeapFree, hHeap, 0, pData
+ret
+free_block ENDP
+END main
+```
+
+# 11.4 IA-32内存管理
+
+在Windows 3.0首次发布的时候，从实模式转换到保护模式是程序员们很感兴趣的事情（在Windows 2.x下面写过程序的人都会记得实模式下的640KB内存限制是一件多么麻烦的事情）。随着Windows保护模式（接下来是虚拟内存模式）的到来，全新的可能性出现了，Intel386处理器（IA-32系列处理器里面的第一种）使这一切成为可能。在操作系统方面，我们现在看到的是，从不稳定的Windows3.0到今天流行的、久经考验（并且稳定）的Windows及Linux操作系统经过了十多年的逐步演变。
+本节的内容主要集中在内存管理的两个主要方面：
+
+- ·从逻辑地址到线性地址的转换。
+- ·从线性地址到物理地址的转换（分页）。
+
+本节的内容主要集中在内存管理的两个主要方面：
+
+- ·从逻辑地址到线性地址的转换。
+- ·从线性地址到物理地址的转换（分页）。
+
+让我们简要回顾一下在第2章中介绍的关于IA-32内存管理的几个术语，它们是：
+
+- ·多任务——允许同时运行多个程序（或任务）。处理器把时间分片划分并分配给每个运行中的程序。
+- ·段——是一块供程序存放代码或者数据的长度不定的内存。
+- ·分段——把多个内存段互相隔离的方法，这使多个程序可以互相隔离地运行而不会干扰。
+- ·段描述符——是用来描述一个内存段的64位值，其中包含了段的基地址、访问权限、长度限制、段的类型和使用方式等信息。
+
+现在加入两个新的概念：
+
+- ·段选择子—存放在段寄存器（CS,DS,SS,ES,FS和GS)里面的16位值。
+- ·逻辑地址——个段选择子和一个32位的偏移地址的组合。
+
+本书几乎所有的内容都忽略了段寄存器而只用到了32位的数据偏移地址，因为用户程序从不直接修改段寄存器。不过，从系统程序员的视角来看，段寄存器是很重要的，因为它间接地和内存中的段相关。
+
+## 11.4.1 线性地址
+
+### 逻辑地址到线性地址的转换
+
+多任务操作系统允许多个程序（任务）同时在内存中运行，每个程序拥有属于它自己的唯一的数据空间。假设有三个程序，每个程序都在偏移地址200h处有一个变量，这三个变量是如何互相隔离的呢？答案是：IA-32处理器使用了一个经过一步或者两个步骤的过程把每个变量的地址转换到另一个唯一的偏移地址上去。
+第一步是把变量的段和偏移地址合成一个线性地址，线性地址有可能就是变量的物理地址，但是有些操作系统（如Windows或者Linux)使用一种称为IA-32的分页技术，使程序能够使用七计算机中实际物理内存更多的线性地址空间。如果情况是这样，就要经过第二个步骤，使用页面转换的方法把线性地址转换到物理地址。有关页面转换的内容将在11.4.2节介绍。
+首先，我们来看看处理器是如何使用段和偏移地址来确定一个变量的线性地址的。每个段选择子指向描述符表里面的一个段描述符，段描述符包含了段的基址（起始地址）,如图11.6所示，逻辑地址中的32位偏移地址和段的基址相加就得到了线性地址。
+
+### 线性地址：
+
+线性地址是一个介于0到FFFFFFFFh的32位整数，它代表内存中的一个位置。如果分页机制没有打开的话，那么线性地址实际上就是数据的物理地址。
+
+### 分页
+
+分页机制是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装人的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。程序要用到的内存被划分成称为页的小块，通常每块的大小为4KB。运行每个程序的时候，处理器有选择地在内存中释放一些不用的页面，然后装入其他马上要被用到的页面
+操作系统使用一个页目录和一系列的页表来追踪内存中所有程序的页面使用情况。当一个程序尝试访问线性地址空间中的某个地址的时候，处理器自动把线性地址转换成物理地址，这个转换就称为页面转换。如果需要的页面尚未在内存中，处理器打断程序的执行并引发一个页错误，操作系统捕获这个错误并在程序恢复运行前把所需的页面从磁盘复制到内存中。从应用程序的角度来看，页错误和页面转换是自动发生的。
+
+![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6i63zh0ppzk0.webp)
+
+举例来说，读者可以在Windows2000中打开任务管理器程序并看看其中显示的物理内存和虚拟内存之间的差别。图11.7显示了一个装有256MB物理内存的计算机的情况。当前使用中的虚拟内存的总数量显示在任务管理器的Commit Charge一栏中，请注意图中显示的最大可用虚拟内存为633MB,明显大于计算机的物理内存数量。
+
+![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2qzq2lfe70g0.webp)
+
+### 描述符表
+
+段描述符存在于两种类型的表中：全局描述符表（GDT)和局部描述符表（LDT)。
+
+#### 全局描述符表（GDT,Global Descriptor Table):
+
+系统中只存在一个全局描述符表，系统在处理器切换到保护模式时创建全局描述符表，表的基址存放在GDTR(全局描述符表寄存器）里面表中的项目（称为段描述符）指向各个段。操作系统可以把所有程序都要使用的段存放在GDT中
+
+#### 局部描述符表（LDT,Local Descriptor Tables):
+
+在一个多任务的操作系统中，每个程序或任务都有它自己的段描述符表，这个表称为局部描述符表（LDT)。当前程序的LDT的基址存放在LDTR(局部描述符表寄存器）中。每个段描述符都包含了段在线性地址空间中的基址。如图11.8所示，一个段和其他段通常是不同的。图中显示了三个不同的逻辑地址，每个地址分别对应于LDT中的不同表项。在这个例子中，我们假设分页机制是关闭的，所以线性地址空间也就是物理地址空间。
+
+![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.zbvjdlbccw0.webp)
+
+### 段描述符的细节
+
+段描述符中除了包含段的基址以外，有些数据位定义了段的限长和段类型。代码段是一个只读段的例子，如果一个程序尝试去修改代码段的内容，那么处理器会产生一个页异常。段描述符中也包含保护级别，这样可以防止应用程序访问操作系统使用的数据。下面是段描述符中各个域的含义。
+
+#### 基地址：
+
+是一个32位的整数，定义了段在4GB的线性地址空间中的起始地址。
+
+#### 特权级：
+
+每个段都有一个0~3级之间的权限等级，其中0级是最高级，通常被操作系统的核心代码所使用。如果一个低优先级（优先级数字大）的程序尝试去存取高优先级（优先级数字小）的段，那么处理器会产生一个异常。
+
+#### 段类型：
+
+用来指明段的类型以及可以对这个段进行的访问方式，还有段的扩展方向（向上或向下）。数据段（包括堆栈段）可以是只读或者是可读写的，可以向上或向下扩展。代码段可以仅仅是可执行的或者是可执行/可读的。
+
+#### 段存在标志：
+
+这个数据位指明段当前是否在物理内存中存在。
+
+#### 粒度标志：
+
+用来决定如何解释段限长域的数值，如果标志位清零，那么段限长的单位是字节如果该标志位置位，那么段限长的单位是4096字节。
+
+#### 段限长：
+
+是一个20位的整数，表示段的长度，它根据粒度标志的值按下面的两种方式解释：
+
+- ·1字节到1MB字节的段长度。
+- ·4096字节到4GB字节的段长度。
+
+## 11.4.2页面地址转换
+
+当分页机制被允许的时候，处理器必须把32位的线性地址转换到32位的物理地址，在这个过程中要用到以下三个数据结构：
+
+- 页目录：一个最多包含1024个32位表项的页表地址表。
+- 页表：一个最多包含1024个32位表项的页地址表。
+- 页：一个4KB或者4MB的地址空间。
+
+为了简单起见，在接下来的讨论中假设使用4KB的页。
+一个线性地址可以被划分为三个部分：指向页目录的指针、指向页表的指针和在页中的偏移地址。页目录的起始地址存放在控制寄存器（CR3)中。如图11.9所示，当线性地址被转换到物理地址的时候，处理器执行了以下的步骤。
+
+![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.576ef8n0lis0.webp)
+
+1.线性地址代表线性地址空间中的一个位置。
+2.以线性地址中10位的页目录域作为索引，从页目录表中得到页表入口项，页表入口项中包含了页表的基址。
+
+3.以线性地址中10位的页表域作为索引，从页表人口项指定的表项中得到页在物理内存中的基址。
+4.线性地址中12位的偏移地址域加上页的基址，就得到了操作数确切的物理地址。操作系统可以选择让所有的程序或任务使用同一个页目录，或者让每个任务使用单独的页目录，也可以混合使用两种方式。
+
+### MS-Windows的虚拟机管理器
+
+现在我们已经有了IA-32处理器如何管理内存的总体概念了，Windows又是如何管理内存的呢？这也应该是个令人感兴趣的问题。下面的小段摘自 Microsoft Platform SDK文档。
+虚拟机管理器（VMM,Virtual Machine Manager)是位于MS-Windows核心的32位保护模式操作系统，它的主要职责是创建、运行、监控和终止虚拟机。虚拟机提供了内存管理、进程、中断和异常等服务，它和虚拟设备（32位的保护模式模块）协同工作，使虚拟设备能够以截取中断和异常的方式来控制应用程序对硬件和所安装软件的操作。不管是VMM还是虚拟设备，都运行在特权级0下的同一个32位平坦模式的地址空间中，系统在全局描述符中创建了两个入口（段描述符）,一个给代码段，另一个给数据段。两个段的基址都是从线性地址0开始的，并且永远不会被改变。VMM支持多线程和抢先式的多任务机制，它在多个虚拟机之间共享CPU时间，这样在这些虚拟机之中运行的应用程序就能够同时运行。
+在上面一段话中，我们可以把虚拟机解释为Intel称之为“进程”或者“任务”的东西，它由程序代码、支持软件、内存和寄存器等组成。每个虚拟机都有属于它自己的地址空间、I/O地址空间、中断向量表和局部描述符表。在虚拟8086模式下运行的应用程序在特权级3下运行。在MS-Windows中，保护模式程序可以在特权级级0和特权级3下面运行（特权级1和2在Windows下未使用）。
+
+# 11.5 本章小结
+
+从表面看，32位的控制台程序和16位的MS-DOS应用程序在外观和行为上都是很相似的，它们都使用标准的输入输出设备，都支持命令行的重定向操作，也都可以输出彩色的文本。但实质上，32位控制台程序和MS-DOS程序却是完全不同的，前者在保护模式下运行，而后者在实模式下运行。另外，它们使用的也是完全不同的函数库，Win32控制台程序使用的就是Windows图形界面程序使用的那些库文件，而MS-DOS程序被限制于使用BIOS和MS-DOS中断，这些中断在IBM-PC的那个年代就已经在使用了。
+在Win32API中可以使用两种字符集：8位的ASCH/ANSI字符集和16位的宽字符/Unicode
+字符集。
+写汇编程序的时候，API函数中使用的标准Windows数据类型必须先转换成MASM数据类
+型（参见表11.1)。
+控制台句柄是一个用于控制台输入输出的32位整数。GetStdHandle函数用来得到控制台句柄高级的控制台输入使用ReadConsole函数，高级的控制台输出使用WriteConsole函数。我们使用CreateFile函数来创建或者打开一个文件，用ReadFile函数读取文件，用WriteFile函数写文件，并且使用CloseHandle函数来关闭文件。如果要移动文件读写指针，可以使用SetFilePointer函数
+SetConsoleScreenBufferSize用来控制控制台屏幕缓冲区。SetConsoleTextAtribute函数用来改变文本颜色。本章中的WriteColors例子程序演示了WriteConsoleOutputAttribute函数和WriteConsole OutputCharacter函数的用法。
+GetLocalTime函数可以用来获取系统时间，SetLocalTime用来设置系统时间，两个函数都用到了SYSTEMTIME结构。本章例子中的GetDateTime例子程序返回一个以64位整数表示的系统时间，这个数值是自1601年1月1日开始的以100ns为单位的计数值。
+当要创建一个图形界面的Windows应用程序的时候，我们需要填写包含主窗口的窗口类信息的WNDCLASS结构，还必须创建一个WinMain过程来获取当前程序的句柄，并加载图标和鼠标光标，然后注册窗口类，创建主窗口，接下来显示并更新主窗口，最后，我们开始一个消息循环来接收并分派消息。
+
+WinProc过程负责接收并处理输入的窗口消息，这些消息通常由按动鼠标或按下键盘等用户动作而激发。本章中的例子程序处理WM_LBUTTONDOWN消息、WM_CREATE消息和WM_CLOSE消息，当检测到这些消息的时候，程序会显示一个消息框。
+动态内存分配，也称为堆（内存）分配（Heap Allocation),是程序用于保留和释放内存的有用工具。汇编语言可通过多种方式进行动态内存分配：第一种方式是通过系统调用让操作系统为其分配内存块；第二种方式是实现自己的堆管理器以处理小对象的内存分配请求。下面是一些用于动态内存分配的最重要的Win32API调用：
+
+- ·GetProcessHeap返回程序默认堆的句柄，该句柄是一个32位整数值。
+- ·HeapAlloc从堆中分配一块内存。
+- ·HeapCreate创建一个新的堆。
+- ·HeapDestroy销毁一个堆。
+- ·HeapFree释放以前从堆中分配的内存块。
+- ·HeapReAlloc调整堆中内存块的大小，必要时重新进行分配。
+- ·HeapSize返回以前分配的内存块的大小。
+
+本章的内存管理一节集中讨论两个主题：逻辑地址到线性地址的转换和线性地址到物理地址的转换。
+逻辑地址中的选择子部分指向段描述符表中的一个表项，这个表项指向线性内存中的一个段。段描述符中包含了这个段的相关信息，如界限、访问类型等。系统中有两种描述符表：一个全局描述符表（GDT)和一个或多个局部描述符表（LDT)。
+分页是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装入的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。处理器使用页目录、页表和页得到一个数据的物理地址。一个页目录表包含了指向各个页表的指针，而一个页表包含了指向多个页的指针。
