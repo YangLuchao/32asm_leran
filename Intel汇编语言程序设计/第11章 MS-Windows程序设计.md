@@ -2,85 +2,83 @@
 
 本章要点
 
-- ·Win32控制台编程
-- ·编写Windows图形界面应用程序
-- ·动态内存分配
-- ·IA-32内存管理
+- Win32控制台编程
+- 编写Windows图形界面应用程序
+- 动态内存分配
+- IA-32内存管理
 
 # 11.1 Win32 控制台编程
 
 在阅读本章的过程中，读者最好能随时提醒自己思考以下的问题：
 
-- ·32位程序如何进行文本的输入和输出？
-- ·32位控制台模式下如何处理文本颜色？
-- ·Irvine32库是如何工作的？
+- 32位程序如何进行文本的输入和输出？
+- 32位控制台模式下如何处理文本颜色？
+- Irvine32库是如何工作的？
 - Windows下如何处理时间和日期？
 - 如何使用MS-Windows函数读写数据文件？
 - 使用汇编能写出图形界面的Windows应用程序吗？
-- ·在保护模式下，如何把段地址和偏移地址转换成物理地址？
-- ·为什么虚拟内存能带来诸多好处？
+- 在保护模式下，如何把段地址和偏移地址转换成物理地址？
+- 为什么虚拟内存能带来诸多好处？
 
 在讲述MS-Windows32位编程基础知识的过程中，本章将回答上面这些（甚至于更多的）问题。在了解了一些数据结构和参数相关的知识之后，控制台程序是相当容易编写的，这就是为什么本章讨论的是Win32编程，而大部分的内容却是和文本模式的控制台程序相关的原因。Irvine32链接库是完全基于Win32控制台函数实现的，因此读者可以把它的源代码和本章中的相关内容进行对比。Irvine32链接库的源代码可在本书附带代码的\Examples\Lib32目录下找到。
-为什么不从我们平常在Windows下看到的图形界面的窗口应用程序开始学习呢？最主要的原因是：这样会涉及繁多的技术细节，汇编语言或C语言编写的图形界面应用程序穴长而复杂。即使在一些优秀作者的帮助下，C和C+程序员们还是年复一年地为搞清楚图形设备句柄、消息传递、字体的度量、设备位图和映射模式等各种技术细节而感到吃力。事实上，在因特网上有很多汇编爱好者很擅长Windows图形界面编程，作者已经对他们的网站进行了链接，参见本书网站（www.
-asmirvine.com)上Assembly Language Sources部分的链接。
+为什么不从我们平常在Windows下看到的图形界面的窗口应用程序开始学习呢？最主要的原因是：这样会涉及繁多的技术细节，汇编语言或C语言编写的图形界面应用程序穴长而复杂。即使在一些优秀作者的帮助下，C和C+程序员们还是年复一年地为搞清楚图形设备句柄、消息传递、字体的度量、设备位图和映射模式等各种技术细节而感到吃力。事实上，在因特网上有很多汇编爱好者很擅长Windows图形界面编程，作者已经对他们的网站进行了链接，参见本书网站（www.asmirvine.com)上Assembly Language Sources部分的链接。
 但是希望了解图形界面编程的读者也不必感到失望，11.2节介绍了一些这方面的知识。虽然这仅仅只是个开始，但可能对读者以后深人这些主题会有所启发。在11.5节中，也列出了用于深入了解这方面内容的一些参考文献。
 从表面看，32位的控制台程序和16位的MS-DOS文本应用程序在外观和行为上都是很相似的。不过事实上，32位控制台程序和MS-DOS程序还是有一些不同：前者在保护模式下运行，后者在实模式下运行。它们使用的是完全不同的函数库，Win32控制台程序使用的就是Windows图形界面程序使用的那些库文件，而MS-DOS程序使用的是BIOS和MS-DOS中断，这些中断在出现IBM-PC的那个年代就已经在使用了。
 
 应用程序编程接口（API,Application Programming Interface)是一些类型、常量和函数的集合，它提供了直接通过编程操纵对象的途径。
-Win32平台软件开发包（Win32 Platform SDK):和Win32API有紧密联系的是Microsoft
-Platform SDK,SDK的含义是软件开发包（Software Development Kit),这是一些用于创建Windows应用程序的工具软件、库文件、代码例子和帮助文档的集合。完整的文档也可以在Microsoft的网站上找到，可在www.msdn.microsoft.com上搜索“Platform SDK”。下载Platform SDK是免费的。
-提示：Irvine32链接库和Win32API是兼容的，因此在程序中可以同时调用Irvine32库
-中的函数和Win32API中的函数。
+Win32平台软件开发包（Win32 Platform SDK):和Win32API有紧密联系的是Microsoft Platform SDK,SDK的含义是软件开发包（Software Development Kit),这是一些用于创建Windows应用程序的工具软件、库文件、代码例子和帮助文档的集合。完整的文档也可以在Microsoft的网站上找到，可在www.msdn.microsoft.com上搜索“Platform SDK”。下载Platform SDK是免费的。
+提示：Irvine32链接库和Win32API是兼容的，因此在程序中可以同时调用Irvine32库中的函数和Win32API中的函数。
 
 ## 11.1.1 背景知识
 
 当一个Windows应用程序开始运行的时候，它可以创建一个控制台窗口，也可以创建一个图形化的窗口。可以在项目文件中为LINK命令指定下面的命令行选项，该选项通知链接器创建于控制台的应用程序：
 
-```
+```assembly
 /SUBSYSTEM:CONSOLE
 ```
 
 接下来可以看到，控制台程序的外观和行为看起来就像一个增强版的MS-DOS窗口程序。每个控制台程序有一个输入缓冲区、一个或者多个屏幕缓冲区：
 
-- 输入缓冲区中包含了一个输入记录队列，每个输入记录都包含了一个输入事件的相关数据。输入事件包括键盘输入、鼠标单击或者用户在改变控制台窗口等事件。
-- ·屏幕缓冲区是一个包含了字符和颜色数据的二维数组，这些数据控制着控制台窗口中显示的文本的外观。
+- ==输入缓冲区中包含了一个输入记录队列，每个输入记录都包含了一个输入事件的相关数据。输入事件包括键盘输入、鼠标单击或者用户在改变控制台窗口等事件。==
+- ==屏幕缓冲区是一个包含了字符和颜色数据的二维数组，这些数据控制着控制台窗口中显示的文本的外观。==
 
 ### Win32API的参考信息
 
-#### 函数：
+#### 函数
 
-本章只能介绍一部分Win32API函数并给出一些简单的示例，由于篇幅所限，很多细节不能一一涉及。要查阅更多相关的内容，可以在Microsoft Visual C++Express内单击帮助菜单或在线访问 Microsoft MSDN站点（当前的网址是www.msdn.microsoft.com)。在搜索函数或标识符时，应把过滤条件参数（“Filtered by”）设为“Platform SDK”。在本书附带的例子代码中，kernel32.txt和user32.txt两个文件分别列出了kernel32.lib和user32.lib两个库中全部函数的名字。
+本章只能介绍一部分Win32API函数并给出一些简单的示例，由于篇幅所限，很多细节不能一一涉及。要查阅更多相关的内容，可以在Microsoft Visual C++ Express内单击帮助菜单或在线访问 Microsoft MSDN站点（当前的网址是www.msdn.microsoft.com)。在搜索函数或标识符时，应把过滤条件参数(“Filtered by”)设为“Platform SDK”。在本书附带的例子代码中，kernel32.txt和user32.txt两个文件分别列出了kernel32.lib和user32.lib两个库中全部函数的名字。
 
-#### 常量：
+#### 常量
 
 在阅读Win32API中的函数文档时，经常会遇到一些常量名，比如TIME_ZONE_ID_UNKNOWN,这类常量有的已经在SmallWin.inc中定义了。如果在SmallWin.inc中找不到定义，那么可以查阅本书网站上最新版本的SmallWin.inc是否已经包含了该定义。如果依旧没有找到，那么可以参考SDK中的相关头文件。例如，头文件WinNTh中定义了TIME_ZON_ID_UNKNOWN以及其他一些相关的常量：
 
-```
-#define TIME_ZONE_ID_UNKNOWN
-#define TIME_ZONE_ID_STANDARD
-#define TIME_ZONE_ID_DAYLIGHT 2
+```c
+#define TIME_ZONE_ID_UNKNOWN	0
+#define TIME_ZONE_ID_STANDARD	1
+#define TIME_ZONE_ID_DAYLIGHT 	2
 ```
 
 使用类似上面的信息，就可以在SmallWin.inc或自己的头文件中增加常量定义了，如：
 
+```c
+TIME_ZONE_ID_UNKNOWN  = 0
+TIME_ZONE_ID_STANDARD = 1
+TIME_ZONE_ID_DAYLIGHT = 2
 ```
-TIME_ZONE_ID_UNKNOWN=0
-TIME_ZONE_ID_STANDARD=1
-TIME_ZONE_ID_DAYLIGHT=2
-字符集和WindowsAPI函数
-```
 
-### Win32 API函数使用两种字符集：
+### 字符集和WindowsAPI函数
 
-8位的ASCII/ANSI字符集和16位的Unicode字符集（在Windows NT/2000/XP中提供）。用于处理文本的Win32API函数往往提供了两个不同的版本：个版本的函数名是以A结尾的（用于8位ANSI字符集）;另一个版本的函数名是以W结尾的（用于16位的宽字符集，包括Unicode字符集）。以WriteConsole函数为例，两个不同版本的函数名如下所示：
+#### Win32 API函数使用两种字符集
 
-- ·WriteConsoleA
-- ·WriteConsoleW
+8位的ASCII/ANSI字符集和16位的Unicode字符集（在Windows NT/2000/XP中提供）。用于处理文本的Win32API函数往往提供了两个不同的版本：个版本的函数名是以A结尾的（用于8位ANSI字符集）;另一个版本的函数名是以W结尾的（用于16位的宽字符集，包括==Unicode字符集==）。以WriteConsole函数为例，两个不同版本的函数名如下所示：
+
+- WriteConsoleA
+- WriteConsoleW
 
 Windows 95/98操作系统不支持以W结尾的函数名。在Windows NT/2000/XP操作系统中Unicode是内置的字符集，在这些系统中如果调用WriteConsoleA函数，操作系统首先把ANSI字符转换成Unicode字符，然后再去调用WriteConsoleW函数。
 在MSDN文档中，函数名（如WriteConsole)尾部的A或者W省略掉了。在本书例子程序使用的include文件中，使用下面的方式对函数名重新定义：
 
-```
+```assembly
 WriteConsole EQU <WriteConsoleA>
 ```
 
@@ -90,8 +88,8 @@ WriteConsole EQU <WriteConsoleA>
 
 对控制台可以有两种层次的操作，使用者可以在简易性和全面性之间折衷选择：
 
-- ·高级操作函数从输入缓冲区中读取字符流，输出字符则被写到屏幕缓冲区中输入和输出都可以被重新定向到对一个文本文件的读写操作中。
-- ·底层操作用来获取键盘和鼠标操作的详细信息，以及用户和控制台窗口的交互动作（如动窗口、改变窗口大小等）。通过底层操作，也可以对控制台窗口的位置和大小、窗口中的字符颜色进行控制。
+- 高级操作函数从输入缓冲区中读取字符流，输出字符则被写到屏幕缓冲区中输入和输出都可以被重新定向到对一个文本文件的读写操作中。
+- 底层操作用来获取键盘和鼠标操作的详细信息，以及用户和控制台窗口的交互动作（如动窗口、改变窗口大小等）。通过底层操作，也可以对控制台窗口的位置和大小、窗口中的字符颜色进行控制。
 
 ### Windows的数据类型
 
@@ -105,39 +103,39 @@ WriteConsole EQU <WriteConsoleA>
 
 SmallWin.inc文件是本书作者创建的，其中包含了用于Win32API编程的常量定义、文本宏和函数原型。本书例子代码自始至终在使用的Irvine32.inc就包含了该文件，因此任何包含了Irvine32.inc的程序都自动包含了SmallWin.inc。如果安装了本书附带的例子代码，则可以在\Examples\Lib32目录下找到该文件，其中的大多数常量定义都可以在用于C/C++编程的SDK头文件Windows.h中找到。与SmallWin.inc这个名字的含义截然相反，该文件非常大，因此这里只给出一些示例：
 
-```
+```assembly
 DO_NOT_SHARE = 0
-NULL = 0
-TRUE=1
-FALSE=0
+NULL  = 0
+TRUE  = 1
+FALSE = 0
 ; Win32 Console handles
-STD_INPUT_HANDLE EQU-10
-STD_OUTPUT_HANDLE EQU-11
-STD_ERROR_HANDLE EQU-12
+STD_INPUT_HANDLE EQU -10
+STD_OUTPUT_HANDLE EQU -11
+STD_ERROR_HANDLE EQU -12
 ```
 
-HANDLE类型实际上是DWORD类型的别名，有助于使汇编语言的函数原型声明与MicrosoftWin32文档中给出的尽量一致：
+==HANDLE类型实际上是DWORD类型的别名==，有助于使汇编语言的函数原型声明与MicrosoftWin32文档中给出的尽量一致：
 
-```
+```assembly
 HANDLE TEXTEQU <DWORD>
 ```
 
 SmallWin.inc中也包含了Win32调用中使用的结构的定义，下面是两个例子：
 
-```
+```assembly
 COORD STRUCT
-X WORD ?
-Y WORD ?
+	X WORD ?
+	Y WORD ?
 COORD ENDS
 SYSTEMTIME STRUCT
-wYear WORD ?
-wMonth WORD ?
-wDayOfWeek WORD ?
-wDay WORD ?
-wHour WORD ?
-wMinute WORD ?
-wSecond WORD ?
-wMilliseconds WORD ?
+	wYear 		WORD 	?
+	wMonth 		WORD 	?
+	wDayOfWeek 	WORD 	?
+	wDay 		WORD 	?
+	wHour 		WORD 	?
+	wMinute 	WORD 	?
+	wSecond 	WORD 	?
+	wMilliseconds WORD 	?
 SYSTEMTIME ENDS
 ```
 
@@ -147,35 +145,31 @@ SYSTEMTIME ENDS
 
 几乎所有的控制台函数都要求把控制台句柄作为第一个参数传递给它们，句柄是一个32位的无符号整数，唯一地标识了一个对象：如位图、画笔或者某个输入输出设备等。在这里我们可以使用下列句柄：
 
-```
-STD_INPUT_HANDLE
-标准输入句柄
-STD_OUTPUT_HANDLE
-标准输出句柄
-STD_ERROR_HANDLE
-标准错误输出句柄
+```assembly
+STD_INPUT_HANDLE	;标准输入句柄
+STD_OUTPUT_HANDLE	;标准输出句柄
+STD_ERROR_HANDLE	;标准错误输出句柄
 ```
 
 后面两个句柄用于向当前活跃的屏幕缓冲区输出数据。
 GetStdHandle函数用于获取一个对应控制台输入、输出或者错误输出流的句柄，在控制台程序中进行任何的输入输出操作都需要用到这样一个句柄，这里是函数原型：
 
-```
+```assembly
 GetStdHandle PROTO,
-nStdHandle:HANDLE
-;句柄的类型
+		nStdHandle:HANDLE	;句柄的类型
 ```
 
 nStdHandle参数可以是STD_INPUT_HANDLE,STD_OUTPUT_HANDLE或者STD_ERROR_HANDLE。函数在EAX中返回句柄，应该把它复制到一个变量中保存起来。下面是调用示例：
 
-```
+```assembly
 .data
 inputHandle DWORD?
 .code
 INVOKE GetStdHandle,STD_INPUT_HANDLE
-mov inputHandle,eax
+		 mov inputHandle,eax
 ```
 
-## 11.1.2Win32控制台函数
+## 11.1.2 Win32控制台函数
 
 表11.2是所有Win32控制台函数的速查列表，可以在MSDN网站（www.msdn.microsoft.com)中找到这些函数的完整说明。
 提示：Win32API函数不保护EAX,EBX,ECX,EDX寄存器，因此必须自己保护这些
