@@ -179,50 +179,46 @@ INVOKE GetStdHandle,STD_INPUT_HANDLE
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.o80ht4rc7qo.webp)
 
-## 11.1.3显示消息框
+## 11.1.3 显示消息框
 
 在Win32程序中产生输出的最简单方法之一就是调用MessageBoxA函数：
 
-```
+```assembly
 MessageBoxA PROTO,
-hWnd:DWORD,
-;窗口句柄（可以为空）
-1pText:PTR BYTE,
-;消息框内的字符串
-1pCaption:PTR BYTE,
-;对话框标题字符串
-uType:DWORD
-;内容和行为类型
+		hWnd:DWORD,		;窗口句柄（可以为空）
+		lpText:PTR BYTE,		;消息框内的字符串
+		lpCaption:PTR BYTE,		;对话框标题字符串
+		uType:DWORD				;内容和行为类型
 ```
 
 在基于控制台的应用程序中，可以把hWnd设为NULL,以表示消息框没有所有者；IpText参数是要显示在消息框内的（空字符结尾的）字符串的指针；lpCaption参数是要显示的对话框标题字符串（空字符结尾的）的指针；uType参数指定对话框的内容和行为。
 
-#### 对话框的内容和行为：
+#### 对话框的内容和行为
 
 uType参数是一个位映射整数，包含了三类选项：要显示的按钮、图标以及默认的按钮。可显示按钮的可能组合值如下：
 
-- ·MB_OK
-- ·MB_OKCANCEL
-- ·MB_YESNO
-- ·MB_YESNOCANCEL
-- ·MB_RETRYCANCEL
-- ·MB_ABORTRETRYIGNORE
-- ·MB_CANCELTRYCONTINUE
+- MB_OK
+- MB_OKCANCEL
+- MB_YESNO
+- MB_YESNOCANCEL
+- MB_RETRYCANCEL
+- MB_ABORTRETRYIGNORE
+- MB_CANCELTRYCONTINUE
 
-#### 默认按钮：
+#### 默认按钮
 
 可以指定在用户按下Enter键时自动选择哪个按钮。可用的选项包括MB_DEFBUTTON1(默认）,MB_DEFBUTTON2,MB_DEFBUTTON3和MB_DEFBUTTON4。按钮是从左到右计数的，第一个按钮的计数是1。
 
-#### 图标：
+#### 图标
 
 有4类图标可以选用，有时候多个常量表示同样的图标：
 
-- ·停止标志：MB_ICONSTOP,MB_ICONHAND和MB_ICONERROR。
-- ·问号（?):MB_ICONQUESTION。
-- ·信息（i):MB_ICONINFORMATION,MB_ICONASTERISK。
-- ·惊叹号（!):MB_ICONEXCLAMATION,MB_ICONWARNING。
+- 停止标志：MB_ICONSTOP,MB_ICONHAND和MB_ICONERROR。
+- 问号（?):MB_ICONQUESTION。
+- 信息（i):MB_ICONINFORMATION,MB_ICONASTERISK。
+- 惊叹号（!):MB_ICONEXCLAMATION,MB_ICONWARNING。
 
-#### 返回值：
+#### 返回值
 
 如果MessageBoxA失败，返回0,否则返回一个整数，指明在关闭对话框时用户点击了哪个按钮，相关的常量包括：IDABORT,IDCANCEL,IDCONTINUE,IDIGNORE,IDNO,
 IDOK,IDRETRY,IDTRYAGAIN和IDYES。所有这些常量都在SmallWin.inc中定义了。
@@ -232,56 +228,48 @@ SmallWin.inc把MessageBoXA重新定义为MessageBox,后者看起来对用户更�
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2g57rwxy4nbw.webp)
 
-#### 程序清单：
+#### 程序清单
 
 下面是程序的清单，由于MessageBox是MessageBoxA的别名，因此程序中使用了前者：
 
-```
-TITLE Demonstrate MessageBoxA
-(MessageBox.asm)
+```assembly
+TITLE Demonstrate MessageBoxA	(MessageBox.asm)
 INCLUDE Irvine32.inc
 .data
-captionw BYTE."Attempt to Divide by Zero",0
-warningMsg BYTE "Please check your denominator.",0
-captionQ BYTE "Question",0
-questionMsg BYTE "Do you want to know my name?",0
-showMyName BYTE "My name is MASM", Odh, Oah, 0
-captionC BYTE "Information",0
-infoMsg BYTE "Your file was erased . " , Odh , Oah
-BYTE "Notify system admin, or restore backup?",0
+	captionw 	BYTE."Attempt to Divide by Zero",0
+	warningMsg 	BYTE "Please check your denominator.",0
+	captionQ 	BYTE "Question",0
+	questionMsg BYTE "Do you want to know my name?",0
+	showMyName 	BYTE "My name is MASM", Odh, Oah, 0
+	captionC 	BYTE "Information",0
+	infoMsg 	BYTE "Your file was erased .",0dh,0ah
+				BYTE "Notify system admin, or restore backup?",0
 .code
 main PROC
 ;显示一条警告信息
-INVOKE MessageBox, NULL, ADDR warningMsg,
-ADDR captionw,
-MB_OK+MB_ICONEXCLAMATION
+	INVOKE MessageBox, NULL,ADDR warningMsg,ADDR captionw,	MB_OK+MB_ICONEXCLAMATION
 ;询问一个问题，等待回应
-INVOKE MessageBox, NULL, ADDR questionMsg,
-ADDR captionQ,MB_YESNO+MB_ICONQUESTION
-cmp eax,IDYES
-;单击了YES按钮？
-jne L2
-;如果没有，则跳走
+	INVOKE MessageBox, NULL, ADDR questionMsg,ADDR captionQ,MB_YESNO+MB_ICONQUESTION
+	cmp eax,IDYES		;单击了YES按钮？
+	jne L2				;如果没有，则跳走
 ;向控制台窗口写名称
-mov edx, OFFSET showMyName
-call WriteString
+	mov edx, OFFSET showMyName
+	call WriteString
 L2:
 ;更复杂的按钮，可能会让用户迷惑
-INVOKE MessageBox, NULL, ADDR infoMsg,
-ADDR captionC,MB_YESNOCANCEL+MB_ICONEXCLAMATION\
-+MB_DEFBUTTON2
-exit
-main ENDP
+	INVOKE MessageBox, NULL, ADDR infoMsg,ADDR captionC,MB_YESNOCANCEL+MB_ICONEXCLAMATION+MB_DEFBUTTON2
+	exit
+	main ENDP
 END main
 ```
 
 如果想让对话框位于桌面上所有其他窗口之上，那么可以在最后一个参数uType中多传递一个（或操作）MB_SYSTEMMODEL选项。
 
-## 11.1.4控制台输入
+## 11.1.4 控制台输入
 
 到现在为止，我们已经数次用到ReadString和ReadChar过程，这两个过程是由本书附带的链接库提供的，它们的使用相当简单，这样读者就可以把注意力集中在其他问题上了。这两个过程都是对Win32API函数ReadConsole的封装（封装过程隐藏了被封装过程中的一些细节）。
 
-### 控制台输入缓冲区：
+### 控制台输入缓冲区
 
 Win32控制台有一个输入缓冲区，其中包含一个输入动作记录的队列，每个输入动作，如键盘敲击、鼠标移动、按下鼠标键等，都会在缓冲区中产生一条记录。高级操作函数如ReadConsole等过滤并处理这些输入数据，只返回字符流。
 
@@ -289,122 +277,108 @@ Win32控制台有一个输入缓冲区，其中包含一个输入动作记录的
 
 ReadConsole函数提供了一种把文本输入读取到一个缓冲区中的便捷方法，函数原型如下：
 
-```
+```assembly
 ReadConsole PROTO,
-hConsoleInput:HANDLE,
-;输入句柄
-1pBuffer:PTR BYTE,
-;缓冲区地址指针
-nNumberofCharsToRead:DWORD,
-;要读取的字符数量
-1pNumberOfCharsRead:PTR DWORD
-;指向返回实际读取数量大小的指针
-1pReserved:DWORD
-;(保留）
+	hConsoleInput:HANDLE,			;输入句柄
+	lpBuffer:PTR BYTE,				;缓冲区地址指针
+	nNumberofCharsToRead:DWORD,		;要读取的字符数量
+	lpNumberOfCharsRead:PTR DWORD	;指向返回实际读取数量大小的指针
+	lpReserved:DWORD				;(保留）
 ```
 
 hConsoleInput参数是一个由GetStdHandle函数返回的有效输入句柄；IpBuffer参数指向一个字符缓冲区；nNumberOfCharsToRead参数是一个32位的整数，指定了要读取字符的最大数量；IpNumberOfCharsRead参数是指向一个双字变量的指针，函数运行时会填写该变量，它返回实际读取到缓冲区中的字符数量。最后一个参数未使用，使用时要传递一个数值（比如0)。
 除了用户的输入以外，调用ReadConsole读入输入缓冲区中的文本还包含两个额外的字符行结束字符（回车和换行符）。欲使输入缓冲区中的文本以0结尾，那么应该把包含0Dh(回车）的字节替换为0,ReadString过程就是这样做的。
-注：Win32API函数不保留EAX,EBX,ECX和EDX寄存器。
-例子程序：设想一下，我们要写一个程序来读取用户输人的字符。首先，需要调用GetStdHandle函数获取控制台的标准输入句柄，然后使用这个句柄调用ReadConsole函数。下面的程序ReadConsole.asm演示了这项技术。注意，Win32API函数调用和对Irvine32库过程的调用是可以共存的，因此，下面的代码在调用Win32API的同时还调用了DumpMem过程：
+注：==Win32API函数不保留EAX,EBX,ECX和EDX寄存器。==
 
-```
-TITLE Read From the Console
-(ReadConsole.asm)
+#### 例子程序
+
+设想一下，我们要写一个程序来读取用户输人的字符。首先，需要调用GetStdHandle函数获取控制台的标准输入句柄，然后使用这个句柄调用ReadConsole函数。下面的程序ReadConsole.asm演示了这项技术。注意，Win32API函数调用和对Irvine32库过程的调用是可以共存的，因此，下面的代码在调用Win32API的同时还调用了DumpMem过程：
+
+```assembly
+TITLE Read From the Console	(ReadConsole.asm)
 INCLUDE Irvine32.inc
-BufSize=80
+BufSize = 80
 .data
-buffer BYTE BufSize DUP(?),0,0
-stdInHandle HANDLE?
-bytesRead DWORD ?
+	buffer 		BYTE BufSize DUP(?),0,0
+	stdInHandle HANDLE	?
+	bytesRead 	DWORD 	?
 .code
 main PROC
 ;获取标准输入的句柄
-INVOKE GetStdHandle,STD_INPUT_HANDLE
-mov stdInHandle,eax
+	INVOKE GetStdHandle,STD_INPUT_HANDLE
+	mov stdInHandle,eax
 ;等待用户输
-INVOKE ReadConsole, stdInHandle, ADDR buffer,
-BufSize-2,ADDR bytesRead,0
+	INVOKE ReadConsole, stdInHandle, ADDR buffer,BufSize-2,ADDR bytesRead,0
 ;显示缓冲区的内容
-mov esi, OFFSET buffer
-mov ecx,bytesRead
-mov ebx, TYPE buffer
-call DumpMem
-exit
-main ENDP
+	mov esi, OFFSET buffer
+	mov ecx,bytesRead
+	mov ebx, TYPE buffer
+	call DumpMem
+	exit
+	main ENDP
 END main
 ```
 
 如果用户输入了“abcdefg”，程序将产生下面的输出。输入缓冲区中包含了9个字符："abcdefg"以及0Dh和0Ah,行结束符（0Dh,0Ah)是用户按下回车键时输入缓冲区的。在这个例子中，bytesRead等于9。
 
-```
+```assembly
 Dump of offset 00404000
-616263646566670D0A
+61 62 63 64 65 66 67 0D 0A
 ```
 
 ### 错误的检查
 
 如果WidnowsAPI函数返回了一个出错值（如NULL),可以调用GetLastError API函数获取关于该错误的更多信息。GetLastError在EAX中返回一个32位的错误码（一个整数）:
 
-```
+```assembly
 .data
-messageId DWORD ?
+	messageId DWORD ?
 .code
-call GetLastError
-mov messageId,eax
+	call GetLastError
+	mov messageId,eax
 ```
 
 MS-Windows有成千上万个错误码，一个人不可能记住所有错误码的含义，因此这时获取能够描述该错误码含义的字符串就非常有意义了，这可以通过调用FormatMessage函数做到：
 
-```
-FormatMessage PROTO,
-;格式化一条消息
-dwFlags:DWORD,
-;格式化选项
-1pSource:DWORD,
-;消息定义的位置
-dwMsgID:DWORD,
-;消息ID
-dwLanguageID:DWORD,
-;语言ID
-1pBuffer:PTR BYTE,
-;指向接收字符串缓冲区的指针
-nSize:DWORD,
-;缓冲区的大小
-va_list:DWORD
-;参数列表的指针
+```assembly
+FormatMessage PROTO,		;格式化一条消息
+		dwFlags:DWORD,		;格式化选项
+		lpSource:DWORD,		;消息定义的位置
+		dwMsgID:DWORD,		;消息ID
+		dwLanguageID:DWORD,	;语言ID
+		lpBuffer:PTR BYTE,	;指向接收字符串缓冲区的指针
+		nSize:DWORD,		;缓冲区的大小
+		va_list:DWORD		;参数列表的指针
 ```
 
 参数有些复杂，因此必须阅读SDK文档，以获取其全貌。以下是最有用的值的简要描述。除了lpBuffer为输出参数外，其余均为输入参数。
 
-- dwFlags,一个双字整数，用于存放格式化选项，如应该如何解释1pSource参数。这个参
+- dwFlags,一个双字整数，用于存放格式化选项，如应该如何解释lpSource参数。这个参
 - 数指定了应如何处理换行以及格式化后的输出行的最大宽度，推荐的选项值FORMAT_MESSAGE_ALLOCATE_BUFFER和FORMAT_MESSAGE_FROM_SYSTEM。
-- · IpSource,指向消息定义的位置的指针，对于上面推荐的 dwFlags 选项值，应把该值设为NULL(0)。
-- ·dwMsgID,调用GetLastError返回的双字整数值。
-- ·dwLanguageld,语言标识符。如果该值为0,则消息的语言是中性的，也就是说消息的语言是用户的默认本地语言
-- · IpBuffer,指向接收消息字符串缓冲区的指针，这是一个输出参数。如果 dwFlags 指定了FORMAT_MESSAGE_ALLOCATE_BUFFER选项，输出缓冲区将自动分配，这个参数也就无须指定了。
+- IpSource,指向消息定义的位置的指针，对于上面推荐的 dwFlags 选项值，应把该值设为NULL(0)。
+- dwMsgID,调用GetLastError返回的双字整数值。
+- dwLanguageld,语言标识符。如果该值为0,则消息的语言是中性的，也就是说消息的语言是用户的默认本地语言
+- IpBuffer,指向接收消息字符串缓冲区的指针，这是一个输出参数。如果 dwFlags 指定了FORMAT_MESSAGE_ALLOCATE_BUFFER选项，输出缓冲区将自动分配，这个参数也就无须指定了。
 - nSize,指定用于存放消息字符串的lpBuffer指向的缓冲区的大小。如果dwFlags指定了
 - FORMAT_MESSAGE_ALLOCATE_BUFFER选项，则该参数可以传递0。
-- ·va_list,要插入到格式化后消息内的值的列表。由于我们通常不格式化出错消息，因此该参数可设为0。
+- va_list,要插入到格式化后消息内的值的列表。由于我们通常不格式化出错消息，因此该参数可设为0。
 
 下面是FormatMessage函数的调用示例：
 
-```
+```assembly
 .data
-messageId DWORD ?
-pErrorMsg DWORD ?
+	messageId DWORD ?
+	pErrorMsg DWORD ?
 ;指向错误消息
 .code
-call GetLastError
-mov messageId,eax
-INVOKE FormatMessage, FORMAT_MESSAGE_ALLOCATE_BUFFER+\
-FORMAT_MESSAGE_FROM_SYSTEM,NULL,messageID,0,
-ADDR pErrorMsg, 0, NULL
+	call GetLastError
+	mov messageId,eax
+	INVOKE FormatMessage, FORMAT_MESSAGE_ALLOCATE_BUFFER+FORMAT_MESSAGE_FROM_SYSTEM,NULL,messageID,0,ADDR pErrorMsg, 0, NULL
 ```
 
 如果dwFlags指定了FORMAT_MESSAGE_ALLOCATE_BUFFER选项，那么在调用FormatMessage函数之后，还要调用LocalFree释放FormatMessage分配的内存：
 
-```
+```assembly
 INVOKE LocalFree, pErrorMsg
 ```
 
@@ -413,35 +387,32 @@ WriteWindowsMsg过程：本书链接库中包含了下面的WriteWindowsMsg过�
 
 ```assembly
 WritewindowsMsg PROC USES eax edx
-:Displays a string containing the most recent error
+; Displays a string containing the most recent error
 ; generated by MS-Windows.
-Receives:nothing
-:Returns:nothing
-data
-WritewindowsMsg_1 BYTE"Error",0
-WritewindowsMsg_2 BYTE":",0
-pErrorMsg DWORD ?
-;指向错误消息
-messageId DWORD ?
+; Receives:nothing
+; Returns:nothing
+.data
+	WritewindowsMsg_1 	BYTE	"Error",0
+	WritewindowsMsg_2 	BYTE	":",0
+	pErrorMsg D			WORD 	?	;指向错误消息
+	messageId 			DWORD 	?	
 . code
-call GetLastError
-mov messageId, eax
+	call GetLastError
+	mov messageId, eax	
 ;显示出错码数字
-mov edx, OFFSET WriteWindowsMsg_1
-call writestring
-call WriteDec
-mov edx, OFFSET WriteWindowsMsg_2
-call writestring
+	mov edx, OFFSET WriteWindowsMsg_1
+	call writestring
+	call WriteDec
+	mov edx, OFFSET WriteWindowsMsg_2
+	call writestring
 ;获取对应的消息字符串
-INVOKE FormatMessage, FORMAT_MESSAGE_ALLOCATE_BUFFER+\
-FORMAT_MESSACE_FROM_SYSTEM,NULL,messageID,NULL,
-ADDR pErrorMsg, NULL, NULL
+	INVOKE FormatMessage, FORMAT_MESSAGE_ALLOCATE_BUFFER+FORMAT_MESSACE_FROM_SYSTEM,NULL,messageID,NULL,ADDR pErrorMsg, NULL, NULL
 ;显示MS-Windows产生的错误消息
-mov edx,pErrorMsg
-call WriteString
+	mov edx,pErrorMsg
+	call WriteString
 ;释放错误消息字符串占用的内存
-INVOKE LocalFree, pErrorMsg
-ret
+	INVOKE LocalFree, pErrorMsg
+	ret
 WritewindowsMsg ENDP
 ```
 
@@ -451,34 +422,36 @@ WritewindowsMsg ENDP
 Irvine32库中键盘相关的过程：Irvine32库中有两个与键盘相关的过程：
 
 - ReadChar等待键盘输入一个ASCII字符并在AL中返回该字符。
-- ·ReadKey过程检查键盘输入，但不等待。如果键盘输入缓冲区中没有按键，零标志置位；如果输入缓冲区中有按键，则零标志清零并且在AL中返回0或按键的ASCII码。EAX和EDX的高半部分会被改写。
+- ReadKey过程检查键盘输入，但不等待。如果键盘输入缓冲区中没有按键，零标志置位；如果输入缓冲区中有按键，则零标志清零并且在AL中返回0或按键的ASCII码。EAX和EDX的高半部分会被改写。
 
 ReadKey过程返回时，如果AL中返回的是0,则表明按下的是一个特殊的键（功能键、光标键等）,AH寄存器中包含了按键的扫描码，在本书的前言部分可以找到特殊按键的扫描码表。DX中包含了虚拟键码，EBX包含了键盘控制键的状态信息。在调用ReadKey后，可以使用TEST指令检查各个特殊键的值。ReadKey的实现有点穴长，这里就不再重复给出其代码了，感兴趣的读者可自行查阅\Examples\Lib32目录下的Irvine32.asm文件中的相应代码。键盘控制键的状态值如表11.3所示。
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.9xu1sb87b4w.webp)
 
-ReadKey测试程序：下面的程序测试ReadKey,程序使用一个循环延时等待按键，然后报告是否按下了CapsLock键。正如第5章所提到的，应该延时以留给MS-Windows处理消息循环的时间。
+#### ReadKey测试程序
 
-```
-TITLE Testing ReadKey
-(TestReadkey.asm)
+下面的程序测试ReadKey,程序使用一个循环延时等待按键，然后报告是否按下了CapsLock键。正如第5章所提到的，应该延时以留给MS-Windows处理消息循环的时间。
+
+```assembly
+TITLE Testing ReadKey	(TestReadkey.asm)
 INCLUDE Irvine32.inc
 INCLUDE Macros . inc
 .code
-main PROC
-L1:mov eax,10
-;为消息处理延时
-call Delay
-call ReadKey
-;等待按键
-jz L1
-test ebx, CAPSLOCK_ON
-jz L2
-mwrite < " CapsLock is ON " , odh , 0ah >
-jmp L3
-L2: mWrite &lt;"CapsLock is OFF", Odh, Oah&gt;
-L3:exit
-main ENDP
+	main PROC
+L1:
+	mov eax,10		;为消息处理延时
+	call Delay
+	call ReadKey	;等待按键
+	jz L1
+	test ebx,CAPSLOCK_ON
+	jz L2
+	mwrite <"CapsLock is ON ",0dh,0ah>
+	jmp L3
+L2: 
+	mWrite <"CapsLock is OFF",0dh,0ah>
+L3:
+	exit
+	main ENDP
 END main
 ```
 
@@ -486,7 +459,7 @@ END main
 
 调用GetKeyStateAPI函数可以测试单个按键的状态，查看其是否正被按下。函数原刑如下.
 
-```
+```assembly
 GetKeyState PROTO, nVirtKey: DWORD
 ```
 
@@ -496,9 +469,8 @@ GetKeyState PROTO, nVirtKey: DWORD
 
 下面的例子程序演示了GetKeyState的用法，程序检查了NumLock和左Shift按键的状态：
 
-```
-TITLE Keyboard Toggle Keys
-(Keybd.asm)
+```assembly
+TITLE Keyboard Toggle Keys	(Keybd.asm)
 INCLUDE Irvine32.inc
 INCLUDE Macros . inc
 ; GetKeyState sets bit 0 in EAX if a toggle key is
@@ -507,22 +479,22 @@ INCLUDE Macros . inc
 ; currently down .
 .code
 main PROC
-INVOKE GetKeyState,VK_NUMLOCK
-test al , 1
-.IF !Zero?
-mWrite < " The NumLock key is ON " , Odh , Oah >
-.ENDIF
-INVOKE GetKeyState,VK_LSHIFT
-test al,80h
-.IF !Zero?
-mwrite < " The Left Shift key is currently DOWN " , Odh , Oah >
-.ENDIF
-exit
-main ENDP
+	INVOKE GetKeyState,VK_NUMLOCK
+	test al,1
+	.IF !Zero?
+		mWrite <"The NumLock key is ON",0dh,0ah>
+	.ENDIF
+		INVOKE GetKeyState,VK_LSHIFT
+	test al,80h
+	.IF !Zero?
+		mwrite <"The Left Shift key is currently DOWN",0dh,0ah>
+	.ENDIF
+	exit
+	main ENDP
 END main
 ```
 
-## 11.1.5控制台输出
+## 11.1.5 控制台输出
 
 在前面的章节中，我们尽量使控制台输出尽可能简单，第5章中介绍的Irvine32链接库中的WriteString过程只要求一个参数：通过EDX传递的字符串地址。事实上，WriteString过程是对Win32函数WriteConsole的封装，调用后者时处理的细节要更多一些。
 不过本节还是要讲述如何直接调用WriteConsole和WriteConsoleOutputCharacter等Win32函数，直接调用这些函数需要了解更多的细节，但比使用Irvine32中的过程灵活性更大。
@@ -532,21 +504,21 @@ END main
 一些Win32控制台函数使用预定义的数据结构，如COORD和SMALL_RECT结构。COORD
 结构用于存放字符在控制台屏幕缓冲区中的坐标，坐标系的原点（0,0)在屏幕的左上角：
 
-```
+```assembly
 COORD STRUCT
-X WORD ?
-Y WORD ?
+	X WORD ?
+	Y WORD ?
 COORD ENDS
 ```
 
 SMALL_RECT结构用于存放矩形区域的左上角和右下角坐标，它指定了控制台窗口中的一块矩形区域：
 
-```
+```assembly
 SMALL_RECT STRUCT
-Left WORD ?
-Top WORD ?
-Right WORD ?
-Bottom WORD ?
+	Left 	WORD ?
+	Top 	WORD ?
+	Right 	WORD ?
+	Bottom 	WORD ?
 SMALL_RECT ENDS
 ```
 
@@ -554,13 +526,13 @@ SMALL_RECT ENDS
 
 WriteConsole函数在控制台窗口中的当前光标位置显示一个字符串并前进光标，支持标准的ASCII控制字符，如制表符、回车、换行符等。要显示的字符串不必以0结尾。函数原型如下：
 
-```
+```assembly
 WriteConsole PROTO,
-hConsoleOutput:HANDLE,
-1pBuffer:PTR BYTE,
-nNumberOfCharsToWrite:DWORD,
-1pNumberOfCharsWritten:PTR DWORD,
-1pReserved:DWORD
+	hConsoleOutput:HANDLE,
+	lpBuffer:PTR BYTE,
+	nNumberOfCharsToWrite:DWORD,
+	lpNumberOfCharsWritten:PTR DWORD,
+	lpReserved:DWORD
 ```
 
 第一个参数hConsoleOutput是控制台输出的句柄；第二个参数IpBuffer是指向要显示的字符串的指针；第三个参数 nNumberOfCharsToWrite指定了要显示的字符串的长度；第四个参数IpNumberOfCharsWritten指向一个整数变量，函数通过该变量返回实际输出的字符数量；最后一个参数是保留未用的，在使用的时候把它设置为0。
@@ -569,67 +541,56 @@ nNumberOfCharsToWrite:DWORD,
 
 下面的Consolel.asm程序在控制台窗口中显示一个字符串，以此示范了GetStdHandle,ExitProcess和WriteConsole函数的用法：
 
-```
+```assembly
 TITLE Win32 Console Example #1
 (Console1.asm)
 ; This program calls the following Win32 Console functions:
 ; CetStdHandle, ExitProcess, WriteConsole
 INCLUDE Irvine32.inc
 .data
-endl EQU < Odh , Oah >
+	endl EQU <0dh,0ah >
 ;行结束符
 message LABEL BYTE
-BYTE"This program is a simple demonstration of"
-BYTE"console mode output, using the GetStdHandle"
-BYTE"and WriteConsole functions.",end1
+	BYTE "This program is a simple demonstration of"
+	BYTE "console mode output, using the GetStdHandle"
+	BYTE "and WriteConsole functions.",end1
 messageSize DWORD ( $-message )
-consoleHandle HANDLE 0
-;标准输出设备的句柄
-byteswritten DWORD ?
-;已输出的字符数量
+consoleHandle HANDLE 0		;标准输出设备的句柄
+byteswritten DWORD ?		;已输出的字符数量
 .code
 main PROC
 ;获取控制台输出的句柄
-INVOKE GetStdHandle,STD_OUTPUT_HANDLE
-mov consoleHandle , eax
+	INVOKE GetStdHandle,STD_OUTPUT_HANDLE
+	mov consoleHandle,eax
 ;在控制台上显示一个字符串
-INVOKE WriteConsole,
-consoleHandle,
-;控制台输出句柄
-ADDR message
-;字符串的指针
-messageSize,
-;字符串的长度
-ADDR byteswritten,
-;返回已输出的字节数
-;未用
-INVOKE ExitProcess,0
-main ENDP
+	INVOKE WriteConsole,
+		consoleHandle,		;控制台输出句柄
+		ADDR message		;字符串的指针
+		messageSize,		;字符串的长度
+		ADDR byteswritten,	;返回已输出的字节数
+		0					;未用
+	INVOKE ExitProcess,0
+	main ENDP
 END main
 ```
 
 程序输出的内容如下所示：
 
 ```
-This program is a simple demonstration of console mode output, using the
-GetStdHandle and WriteConsole functions.
+This program is a simple demonstration of console mode output, using the GetStdHandle and WriteConsole functions.
 ```
 
 ### WriteConsoleOutputCharacter函数
 
 WriteConsoleOutputCharacter函数将一定数量的字符复制到屏幕缓冲区从指定位置开始的连续空间中。函数原型如下所示：
 
-```
+```assembly
 WriteConsoleOutputCharacter PROTO,
-hConsoleOutput:HANDLE,
-;控制台输出句柄
-7pCharacter:PTR BYTE,
-;字符缓冲区的地址
-nLength:DWORD,
-;缓冲区的大小
-dwwriteCoord:COORD,
-;首字符的坐标
-1pNumberofCharsWritten:PTRDWORD;实际输出字符的数量
+	hConsoleOutput:HANDLE,		;控制台输出句柄
+	lpCharacter:PTR BYTE,		;字符缓冲区的地址
+	nLength:DWORD,				;缓冲区的大小
+	dwwriteCoord:COORD,			;首字符的坐标
+	lpNumberofCharsWritten:PTRDWORD;实际输出字符的数量
 ```
 
 输出字符的时候，如果到达了屏幕行的末尾，那么自动换行。该函数不影响控制台缓冲区中原有字符的属性值。如果函数无法输出字符，返回值为0,函数忽略字符串中的ASCII控制字符，如制表符、回车符和换行符。
@@ -640,20 +601,15 @@ dwwriteCoord:COORD,
 
 CreateFile函数既可以用于创建一个文件，也可以用于打开一个文件。如果函数执行成功，那么它返回文件句柄，否则返回的是INVALID_HANDLE_VALUE常量。函数原型如下所示：
 
-```
-CreateFile PROTO,
-;创建新文件或打开已存在的文件
-;文件名字符串指针
-1pFilename:PTR BYTE,
-dwDesiredAccess:DWORD,
-;存取模式
-;共享模式
-dwShareMode : DWORD .
-1pSecurityAttributes:DWORD,;指向安全属性结构
-dwCreationDisposition.DWORD,;选项
-dwFlagsAndAttributes:DWORD,文件属性
-hTemplateFile:DWORD
-;模板文件的句柄
+```assembly
+CreateFile PROTO,			;创建新文件或打开已存在的文件
+	lpFilename:PTR BYTE,	;文件名字符串指针
+	dwDesiredAccess:DWORD,	;存取模式
+	dwShareMode:DWORD,		;共享模式
+	lpSecurityAttributes:DWORD,;指向安全属性结构
+	dwCreationDisposition:DWORD,;选项
+	dwFlagsAndAttributes:DWORD;文件属性
+	hTemplateFile:DWORD		;模板文件的句柄
 ```
 
 函数的参数如表11.5所示。
@@ -662,8 +618,7 @@ hTemplateFile:DWORD
 
 ### dwDesiredAccess:
 
-通过设置 dwDesiredAccess参数，可以选择读模式、写模式、读写模式
-或者设备查询模式。可以同时选择表11.6列出的各种模式，当然还可以同时再加上很多未列在表中的标志位（在Platform SDK文档中搜索CreateFile):
+通过设置 dwDesiredAccess参数，可以选择读模式、写模式、读写模式或者设备查询模式。可以同时选择表11.6列出的各种模式，当然还可以同时再加上很多未列在表中的标志位（在Platform SDK文档中搜索CreateFile):
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6xj6l6s4vf00.webp)
 
@@ -680,53 +635,44 @@ FILE_ATTRIBUTE_HIDDEN+FILE_ATTRIBUTE_READONLY
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.4sdbe7zjg3k0.webp)
 
-例子：以下的例子演示了如何创建或者打开文件，但仅仅是说明性的，更多选项的使用方法请参考MSDN文档中的CreateFile部分。
+#### 例子
 
-```
-·打开一个现存的文件进行读操作（输入）:
-INVOKE CreateFile,
-ADDR filename
-;文件名指针
-GENERIC_READ,
-;读取模式
-DO_NOT_SHARE,
-;共享模式为不共享
-NULL,
-;安全属性的指针
-OPEN EXISTING
-;打开已存在的文件
-FILE_ATTRIBUTE_NORMAL,
-;普通文件属性
-;未用
-·打开一个现存的文件进行写操作（输出）。文件打开之后，可以覆盖已存在的数据，也可
-以把文件指针移动到文件的末尾，追加新的数据（参见SetFilePointer函数，11.1.6节）:
-INVOKE CreateFile
-GENERIC_WRITE,
-;写入文件
-UO_NOT_SHARE,
-OPEN_EXISTING,
-;文件必须存在
-CILE_ATT IBUTE_NORMAL,
-·创建一个普通属性的新文件，如果文件存在则覆盖：
-INVOKE CreateFile
-ADDR filename,
-GENERIC_WRITE,
-;写入文件
-DO_NOT_SHARE,
-NULI
-CREATE_ALWAYS,
-;覆盖现存的文件
-FILE_ATTRIBUTE_NORMAL,
-·如果文件不存在则创建一个新文件，否则就打开现存的文件进行输出：
-[NVOKE CreateFile
-ADDR filename,
-GENERIC_WRITE,
-;写入文件
-DO_NOT_SHARE,
-NULL,
-CREATE NEW
-;不会删除现存文件
-FILE ATTRIBUTE NORMAL,
+以下的例子演示了如何创建或者打开文件，但仅仅是说明性的，更多选项的使用方法请参考MSDN文档中的CreateFile部分。
+
+```assembly
+;打开一个现存的文件进行读操作（输入）:
+	INVOKE CreateFile,
+		ADDR filename,		;文件名指针
+		GENERIC_READ,		;读取模式
+		DO_NOT_SHARE,		;共享模式为不共享
+		NULL,				;安全属性的指针
+		OPEN EXISTING,		;打开已存在的文件
+		FILE_ATTRIBUTE_NORMAL,		;普通文件属性
+		0					;未用
+;打开一个现存的文件进行写操作（输出）。文件打开之后，可以覆盖已存在的数据，也可以把文件指针移动到文件的末尾，追加新的数据（参见SetFilePointer函数，11.1.6节）:
+	INVOKE CreateFile
+		GENERIC_WRITE,		;写入文件
+		UO_NOT_SHARE,
+		OPEN_EXISTING,		;文件必须存在
+		CILE_ATT IBUTE_NORMAL,
+		0
+;创建一个普通属性的新文件，如果文件存在则覆盖：
+	INVOKE CreateFile
+		ADDR filename,
+		GENERIC_WRITE,		;写入文件
+		DO_NOT_SHARE,
+		NULL
+		CREATE_ALWAYS,		;覆盖现存的文件
+		FILE_ATTRIBUTE_NORMAL,
+;如果文件不存在则创建一个新文件，否则就打开现存的文件进行输出：
+	INVOKE CreateFile
+		ADDR filename,
+		GENERIC_WRITE,		;写入文件
+		DO_NOT_SHARE,		
+		NULL,
+		CREATE_NEW			;不会删除现存文件
+		FILE_ATTRIBUTE NORMAL,
+		0
 ```
 
 (常量DO_NOT_SHARE和NULL已经在SmallWin.inc文件中定义了，SmallWin.inc被Irvine32.文件自动包含了。）
@@ -735,10 +681,9 @@ FILE ATTRIBUTE NORMAL,
 
 CloseHandle函数关闭一个已经打开对象的句柄。函数原型如下所示：
 
-```
+```assembly
 CloseHandle PROTO,
-hobject:HANDLE
-;对象句柄
+	hobject:HANDLE	;对象句柄
 ```
 
 可利用CloseHandle来关闭当前打开文件的名柄，如果失败则返回0。
@@ -747,76 +692,58 @@ hobject:HANDLE
 
 ReadFile函数从一个输入文件中读取数据。函数原型如下所示：
 
-```
+```assembly
 ReadFile PROTO,
-hFile:HANDLE,
-;输入文件句柄
-1pBuffer:PTR BYTE,
-;缓冲区指针
-nNumberOfBytesToRead:DWORD,
-;要读取的字节数
-1pNumberOfBytesRead:PTR DWORD
-;实际读取的数量
-1 poverl apped : PTR DWORD
-;异步信息的指针
+	hFile:HANDLE,		;输入文件句柄
+	lpBuffer:PTR BYTE,	;缓冲区指针
+	nNumberOfBytesToRead:DWORD,	;要读取的字节数
+	lpNumberOfBytesRead:PTR DWORD	;实际读取的数量
+	lpoverlapped:PTR DWORD			;异步信息的指针
 ```
 
-其中hFile参数是CreateFile函数返回的已经打开的文件句柄；1pBuffer参数指向用于接收读取的数据的缓冲区；nNumberOfBytesToRead参数指定了最多要读取多少字节的数据；IpNumber-OfBytesRead参数是一个指针，指向一个整数变量，函数返回的时候会在此填入最终实际读取的字节数；IpOverlapped参数是可选的，它指向一个描述如何在异步操作方式下读取文件的数据结构在同步模式下（这是默认使用的方式）应设为NULL(0)。如果函数失败则返回0
+其中hFile参数是CreateFile函数返回的已经打开的文件句柄；lpBuffer参数指向用于接收读取的数据的缓冲区；nNumberOfBytesToRead参数指定了最多要读取多少字节的数据；IpNumber-OfBytesRead参数是一个指针，指向一个整数变量，函数返回的时候会在此填入最终实际读取的字节数；IpOverlapped参数是可选的，它指向一个描述如何在异步操作方式下读取文件的数据结构在同步模式下（这是默认使用的方式）应设为NULL(0)。如果函数失败则返回0
 ReadFile内部维护了一个指向当前文件位置的指针。如果针对同一个文件句柄多次调用ReadFile函数，则ReadFile能够记住上次读之后的位置并从该位置开始继续读。ReadFile也可在异步模式下运行，这意味着程序可以不必一直等待直到操作完成。
 
 ### WriteFile函数
 
 WriteFile函数把数据写入文件，它使用一个输出句柄，这个句柄可以是一个控制台的屏幕缓冲区句柄，也可以是一个文本文件（或二进制文件）的句柄。数据的写入位置取决于文件内部的读写指针。写操作完成后，读写指针将根据实际写人的字节数做调整。函数原型如下所示：
 
-```
+```assembly
 WriteFile PROTO,
-hFile:HANDLE,
-;输出句柄
-1pBuffer:PTR BYTE,
-;缓冲区指针
-nNumberofBytesToWrite:DWORD,
-;缓冲区大小
-1pNumberOfBytesWritten:PTR DWORD,
-;实际写入的字节数
-1poverlapped:PTR DWORD
-;异步信息的指针
+		hFile:HANDLE,		;输出句柄
+		lpBuffer:PTR BYTE,	;缓冲区指针
+		nNumberofBytesToWrite:DWORD,	;缓冲区大小
+		lpNumberOfBytesWritten:PTR DWORD,;实际写入的字节数
+		lpoverlapped:PTR DWORD			;异步信息的指针
 ```
 
-其中hFile是以前打开的文件的句柄；1pBuffer是指向存放要写入文件的数据缓冲区的指针；nNumberOfBytesToWrite指定了要写入文件多少个字节；IpNumberOfBytesWritten参数是一个指针，指向一个整数变量，函数返回的时候会在此填入最终实际写人的字节数；1pOverlapped是指向异步操作信息的指针，对于同步操作应设置为NULL。如果函数失败则返回0。
+其中hFile是以前打开的文件的句柄；lpBuffer是指向存放要写入文件的数据缓冲区的指针；nNumberOfBytesToWrite指定了要写入文件多少个字节；IpNumberOfBytesWritten参数是一个指针，指向一个整数变量，函数返回的时候会在此填入最终实际写人的字节数；lpOverlapped是指向异步操作信息的指针，对于同步操作应设置为NULL。如果函数失败则返回0。
 
 ### SetFilePointer函数
 
 SetFilePointer函数移动一个已打开的文件的读写指针位置，这个函数可以用来在文件最后添加数据或者对文件进行随机记录处理操作：
 
-```
+```assembly
 SetFilePointer PROTO,
-hFile:HANDLE,
-;文件句柄
-1DistanceToMove:SDWORD,
-;文件指针要移动多少个字节
-1pDistanceToMoveHigh:PTR SDWORD,
-;指向包含移动字节数高位部分的指针
-dwMoveMethod:DWORD
-;开始位置
+	hFile:HANDLE,		;文件句柄
+	lDistanceToMove:SDWORD,	;文件指针要移动多少个字节
+	lpDistanceToMoveHigh:PTR SDWORD,;指向包含移动字节数高位部分的指针
+	dwMoveMethod:DWORD		;开始位置
 ```
 
 如果函数失败则返回0。dwMoveMethod参数指定了从哪个位置开始移动读写指针，它可以有3种取值：FILE_BEGIN,FILE_CURRENT和FILE_END。要移动的字节数是一个64位的带符号整数，它被分为两个部分：
 
-- · IpDistance ToMove——低32位；
-- ·IpDistanceToMoveHigh——指向一个变量，里面存放高32位。
+- IpDistance ToMove——低32位；
+- IpDistanceToMoveHigh——指向一个变量，里面存放高32位。
 
 如果1pDistanceToMoveHigh的值是NULL(0)的话，则移动文件指针的时候函数只使用1pDistanceToMove中的值。下面的例子代码准备在文件尾部添加数据：
 
-```
+```assembly
 INVOKE SetFilePointer,
-fileHandle,
-;文件句柄
-0,
-;要移动字节数的低32位
-0,
-;要移动字节数的高32位
-FILE_END
-;移动模式
+	fileHandle,	;文件句柄
+	0,			;要移动字节数的低32位
+	0,			;要移动字节数的高32位
+	FILE_END	;移动模式
 ```
 
 参见AppendFile.asm例子程序。
@@ -825,153 +752,143 @@ FILE_END
 
 Irvine32库包含了一些用于文件输入输出的过程，在第5章已经介绍过了。这些过程是对本章中已经介绍过的Win32API函数的封装。下面列出了CreateOutputFile,OpenFile,WriteToFile,Read-FromFile和CloseFile的源码。
 
-```
+```assembly
 CreateOutputFile PROC
-Creates a new file and opens it in output mode.
-: Receives : EDX points to the filename .
+; Creates a new file and opens it in output mode.
+; Receives : EDX points to the filename .
 ; Returns : If the file was created successfully , EAX
-contains a valid file handle. Otherwise, EAX
-equals INVALID_HANDLE_VALUE.
+; contains a valid file handle. Otherwise, EAX
+; equals INVALID_HANDLE_VALUE.
 INVOKE CreateFile,
-edx, GENERIC_WRITE, DO_NOT_SHARE, NULL,
-CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0
-ret
+	edx, 
+	GENERIC_WRITE, 
+	DO_NOT_SHARE, 
+	NULL,
+	CREATE_ALWAYS,
+	FILE_ATTRIBUTE_NORMAL,
+	0
+	ret
 CreateOutputFile ENDP
 OpenFile PROC
-Opens a new text file and opens for input.
-Receives:EDXpointstothefilename.
-: Returns : If the file was opened successfully , EAX
-contains a valid file handle. Otherwise, EAX equals
-INVALID_HANDLE_VALUE.
+; Opens a new text file and opens for input.
+; Receives:EDXpointstothefilename.
+; Returns : If the file was opened successfully , EAX
+; contains a valid file handle. Otherwise, EAX equals
+; INVALID_HANDLE_VALUE.
 INVOKE CreateFile
-edx, GENERIC_READ, DO_NOT_SHARE, NULL,
-OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0
-ret
+	edx, 
+	GENERIC_READ, 
+	DO_NOT_SHARE, 
+	NULL,
+	OPEN_EXISTING,
+	FILE_ATTRIBUTE_NORMAL,
+	0
+	ret
 OpenFile ENDP
 WriteToFile PROC
 ; Writes a buffer to an output file .
 ; Receives : EAX = file handle , EDX = buffer offset ,
 ; ECX = number of bytes to write
 ; Returns : EAX = number of bytes written to the file .
-If the value returned in EAX is less than the
+; If the value returned in EAX is less than the
 ; argument passed in ECX, an error likely occurred.
 .data
-WriteToFile_1 DWORD ?
-; number of bytes written
+	WriteToFile_1 DWORD ?	; number of bytes written
 .code
-INVOKE WriteFile,
-; write buffer to file
-eax,
-; file handle
-edx,
-; buffer pointer
-ecx,
-; number of bytes to write
-ADDR WriteToFile_1, ; number of bytes written
-0
-; overlapped execution flag
-mov eax,WriteToFile_1
-; return value
-ret
+	INVOKE WriteFile,	; write buffer to file
+		eax,			; file handle
+		edx,			; buffer pointer
+		ecx,			; number of bytes to write
+		ADDR WriteToFile_1, ; number of bytes written
+		0				; overlapped execution flag
+	mov eax,WriteToFile_1	; return value
+	ret
 WriteToFile ENDP
 ReadFromFile PROC
 ; Reads an input file into a buffer .
-Receives:EAX=file handle,EDX=buffer offset,
-ECX=number of bytes to read
+; Receives:EAX=file handle,EDX=buffer offset,
+; ECX=number of bytes to read
 ; Returns : If CF = 0 , EAX = number of bytes read ; if
-CF=1,EAX contains the system error code returned
-by the GetLastError Win32 API function.
+; CF=1,EAX contains the system error code returned
+; by the GetLastError Win32 API function.
 .data
-ReadFromFile_1 DWORD ?
-; number of bytes read
+	ReadFromFile_1 DWORD ?	; number of bytes read
 .code
-INVOKE ReadFile,
-eax,
-; file handle
-edx,
-; buffer pointer
-ecx,
-; max bytes to read
-ADDR ReadFromFile_1,
-; number of bytes read
-;overlapped execution flag
-mov eax,ReadFromFile_1
-ret
+	INVOKE ReadFile,
+		eax,		; file handle
+		edx,		; buffer pointer
+		ecx,		; max bytes to read
+		ADDR ReadFromFile_1,	; number of bytes read
+		0			;overlapped execution flag
+	mov eax,ReadFromFile_1
+	ret
 ReadFromFile ENDP
 CloseFile PROC
-' closes a file using its handle as an identifier .
-Receives:EAX=file handle
-Returns:EAX=nonzero if the file is successfully
-closed.
+; closes a file using its handle as an identifier .
+; Receives:EAX=file handle
+; Returns:EAX=nonzero if the file is successfully
+; closed.
 INVOKE CloseHandle,eax
-ret
+	ret
 CloseFile ENDP
 ```
 
-## 11.1.8测试文件I/O过程
+## 11.1.8 测试文件I/O过程
 
-演示创建文件的例子程序
+### 演示创建文件的例子程序
+
 下面的程序创建了一个输出文件，要求用户输入一段文本，然后把文本写入输出文件并报告已写入的字节数，最后关闭文件。程序在尝试创建文件之后检查是否发生了错误：
 
-```
-TITLE Creating a File
-(CreateFile.asm)
+```assembly
+TITLE Creating a File	(CreateFile.asm)
 INCLUDE Irvine32.inc
-BUFFER_SIZE=501
+	BUFFER_SIZE = 501
 .data
-buffer BYTE BUFFER_SIZE DUP(?)
-filename BYTE"output.txt",0
-fileHandle HANDLE ?
-stringLength DWORD ?
-byteswritten DWORD ?
-str1 BYTE "Cannot create file", Odh, Oah, 0
-str2 BYTE"Bytes written to file [output.txt]:",0
-str3 BYTE "Enter up to 500 characters and press"
-BYTE"[Enter]:",0dh,0ah,0
+	buffer	 		BYTE 	BUFFER_SIZE DUP(?)
+	filename 		BYTE	"output.txt",0
+	fileHandle 		HANDLE ?
+	stringLength 	DWORD ?
+	byteswritten 	DWORD ?
+	str1 			BYTE "Cannot create file",0dh,0ah,0
+	str2			BYTE "Bytes written to file [output.txt]:",0
+	str3 			BYTE "Enter up to 500 characters and press"
+					BYTE "[Enter]:",0dh,0ah,0
 .code
-nain PROC
+main PROC
 ;创建一个新的文本文件
-mov edx, OFFSET filename
-call CreateOutputFile
-mov fileHandle,eax
+	mov edx, OFFSET filename
+	call CreateOutputFile
+	mov fileHandle,eax
 ;检查错误
-cmp eax, INVALID_HANDLE_VALUE
-;是否发生了错误？
-jne file_ok
-;否：跳过
-mov edx, OFFSET str1
-;显示错误
-call WriteString
-jmp quit
+	cmp eax,INVALID_HANDLE_VALUE	;是否发生了错误？
+	jne file_ok						;否：跳过
+	mov edx, OFFSET str1			;显示错误
+	call WriteString
+	jmp quit
 file_ok:
 ;要求用户输人一个字符串
-mov edx, OFFSET str3
-;"Enter up to ...."
-call WriteString
-mov ecx, BUFFER_SIZE
-;输入一个字符串
-mov edx, OFFSET buffer
-call ReadString
-mov stringLength,eax
-;计算输入的字符的数目
+	mov edx,OFFSET str3			;"Enter up to ...."
+	call WriteString
+	mov ecx,BUFFER_SIZE			;输入一个字符串
+	mov edx,OFFSET buffer
+	call ReadString
+	mov stringLength,eax		;计算输入的字符的数目
 ;把缓冲区写入输出文件
-mov eax, fileHandle
-mov edx, OFFSET buffer
-mov ecx,stringLength
-call WriteToFile
-mov.byteswritten,eax
-;保存返回值
-call CloseFile
+	mov eax, fileHandle
+	mov edx, OFFSET buffer
+	mov ecx,stringLength
+	call WriteToFile
+	mov  byteswritten,eax		;保存返回值
+	call CloseFile
 ;显示返回值
-mov edx, OFFSET str2
-;"Bytes written"
-call WriteString
-mov eax,byteswritten
-call WriteDec
-call Crlf
+	mov edx, OFFSET str2		;"Bytes written"
+	call WriteString
+	mov eax,byteswritten
+	call WriteDec
+	call Crlf
 quit:
-exit
-main ENDP
+	exit
+	main ENDP
 END main
 ```
 
@@ -979,98 +896,88 @@ END main
 
 下面的程序打开一个文件用于输入，把它的内容读入一个缓冲区，然后显示缓冲区的内容调用的所有过程都是Irvine32库中的过程：
 
-```
+```assembly
 TITLE Reading a File
 (ReadFile.asm)
 ; Opens, reads, and displays a text file using
 ; procedures from Irvine32. lib
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
-BUFFER_SIZE=5000
+BUFFER_SIZE = 5000
 .data
-buffer BYTE BUFFER_SIZE DUP(?)
-filename BYTE 80 DUP(0)
-fileHandle HANDLE ?
+	buffer 		BYTE BUFFER_SIZE DUP(?)
+	filename 	BYTE 80 DUP(0)
+	fileHandle 	HANDLE ?
 .code
 main PROC
 ;允许用户输入一个文件名
-mwrite"Enter an input filename:"
-mov edx , OFFSET filename
-mov ecx, SIZEOF filename
-call ReadString
+	mwrite	"Enter an input filename:"
+	mov 	edx , OFFSET filename
+	mov 	ecx, SIZEOF filename
+	call 	ReadString
 ;打开文件用于输入
-mov edx, OFFSET ti lename
-call OpenInputFile
-mov fileHandle,eax
+	mov 	edx,OFFSET tilename
+	call 	OpenInputFile
+	mov 	fileHandle,eax
 ;检查错误
-cmp eax,INVALID_HANDLE_VALUE
-;打开文件错误？
-jne file_ok
-mwrite <"Cannot open file",Odh,Oah> ;否：跳过
-jmp quit
-;退出
+	cmp 	eax,INVALID_HANDLE_VALUE	;打开文件错误？
+	jne 	file_ok
+	mwrite 	<"Cannot open file",Odh,Oah> ;否：跳过
+	jmp quit	;退出
 file_ok:
 ;把文件内容读入一个缓冲区
-mov edx, OFFSET buffer
-mov ecx,BUFFER_SIZE
-call ReadFromFile
-jnc check_buffer_size
-;读取错误？
-mWrite"Error reading file."
-;是：显示一条错误信息
-call WritewindowsMsg
-jmp close_file
+	mov 	edx,0FFSET buffer
+	mov 	ecx,BUFFER_SIZE
+	call 	ReadFromFile
+	jnc 	check_buffer_size		;读取错误？
+	mWrite "Error reading file."	;是：显示一条错误信息
+	call 	WritewindowsMsg
+	jmp 	close_file
 check_buffer_size:
-cmp eax,BUFFER_SIZE
-;缓冲区足够大吗？
-jb buf_size_ok
-mWrite < " Error : Buffer too small for the file " , odh , 0ah >
-jmp quit
-;退出
+	cmp 	eax,BUFFER_SIZE			;缓冲区足够大吗？
+	jb 		buf_size_ok
+	mWrite 	<"Error : Buffer too small for the file",0dh,0ah >
+	jmp 	quit		;退出
 buf_size_ok:
-mov buffer[eax],0
-;插入一个nu11(0)结束符
-mWrite"File size:"
-call WriteDec
-;显示文件的大小
-call Crlf
-;显示缓冲区的内容
-mWrite &lt;"Buffer:",0dh,0ah,0dh,0ah>
-mov edx,OFFSET buffer
-;显示缓冲区的内容
-call WriteString
-call Crlf
+	mov 	buffer[eax],0	;插入一个nu11(0)结束符
+	mWrite	"File size:"
+	call 	WriteDec			;显示文件的大小
+	call 	Crlf				;显示缓冲区的内容
+	mWrite 	<"Buffer:",0dh,0ah,0dh,0ah>
+	mov 	edx,OFFSET buffer		;显示缓冲区的内容
+	call 	WriteString
+	call 	Crlf
 close_file:
-mov eax,fileHandle
-call CloseFile
+	mov 	eax,fileHandle
+	call 	CloseFile
 quit:
-exit
-main ENDP
+	exit
+	main ENDP
 END main
 ```
 
 如果文件无法打开，程序就会报告一个类似下面的错误：
 
-```
-Enter an input filename : crazy . txt
+```assembly
+Enter an input filename : crazy.txt
 Cannot open file
 ```
 
 如果无法读取文件，程序也会报告错误。假设如果程序使用了错误的文件句柄，就会报告类似下面的错误：
 
-```
+```assembly
 Enter an input filename: infile. txt
 Error reading file . Error 6 : The handle is invalid .
 ```
 
 也有可能文件太大而缓冲区太小，这时也会报告一个错误：
 
-```
+```assembly
 Enter an input filename: infile. txt
 Error: Buffer too small for the file
 ```
 
-## 11.1.9控制台窗口的操作
+## 11.1.9 控制台窗口的操作
 
 通过Win32API可以对控制台窗口及其缓冲区进行非常多的控制操作，图11.1表明屏幕缓冲区有可能大于控制台窗口当前显示的行数。控制台窗口就像一个“视图”，仅仅显示部分缓冲区的内容。
 
@@ -1078,7 +985,7 @@ Error: Buffer too small for the file
 
 有几个函数可以影响控制台窗口以及它在与之关联的屏幕缓冲区中的位置：
 
-- ·SetConsoleWindowInfo函数设置控制台窗口在与之相关的屏幕缓冲区中的大小和位置。
+- SetConsoleWindowInfo函数设置控制台窗口在与之相关的屏幕缓冲区中的大小和位置。
 - GetConsoleScreenBufferInfo函数返回控制台窗口矩形在与之相关屏幕缓冲区中的坐标（当然这个函数还返回其他的一些数据）。
 - SetConsoleCursorPosition函数把光标定位到屏幕缓冲区中的指定位置，如果这个位置不在可视区域内，控制台窗口会滚动直到光标可见为止。
 - ScrollConsoleScreenBuffer函数将屏幕缓冲区中的部分或者全部文本移动出去，这个函数可能会影响到控制台窗口中显示的文本。
@@ -1087,11 +994,11 @@ Error: Buffer too small for the file
 
 SetConsoleTitle函数允许改变控制台窗口的标题栏文字，例如：
 
-```
+```assembly
 .data
-titlestr BYTE "Console title",0
+	titlestr BYTE "Console title",0
 .code
-INVOKE SetConsoleTitle, ADDR titlestr
+	INVOKE SetConsoleTitle, ADDR titlestr
 ```
 
 
@@ -1100,37 +1007,32 @@ INVOKE SetConsoleTitle, ADDR titlestr
 
 GetConsoleScreenBufferInfo函数返回控制台窗口当前状态的相关信息，这个函数有两个参数：控制台屏幕的句柄以及指向一个结构的指针，这个结构将由下列函数填写：
 
-```
+```assembly
 Get ConsoleScreenButferInfo PROTO,
-hConsoleOutput:HANDLE,
-1pConsoleScreenBufferInfo:PIR CONSOLE_SCREEN_BUFFER_INFO
+	hConsoleOutput:HANDLE,
+	lpConsoleScreenBufferInfo:PIR CONSOLE_SCREEN_BUFFER_INFO
 ```
 
 下面是CONSOLE_SCREEN_BUFFER_INFO结构的定义：
 
-```
+```assembly
 CONSOLE SCREEN_BUFFER_INFO STRUCT
-dwSize
-COORD<>
-dwCursorPosition
-COORD<>
-wAttributes
-WORD?
-srwindow
-SMALL_RECT<>
-dwMaximumWindowSize COORD<>
-CONSOLE_SCREEN_BUFFER_INFOENDS
+	dwSize				COORD 	<>
+	dwCursorPosition	COORD 	<>
+	wAttributes			WORD	?
+	srwindow			SMALL_RECT	<>
+	dwMaximumWindowSize COORD<>
+CONSOLE_SCREEN_BUFFER_INFO ENDS
 ```
 
 dwSize字段中返回屏幕缓冲区的大小，它们是以字符数为单位进行度量的行数和列数；dwCursorPosition字段返回光标的位置。这两个字段都是用COORD结构定义的。WAttributes返回WriteConsole和WriteFile等函数将字符写入控制台窗口时使用的前景和背景颜色；srWindow字段返回控制台窗口在屏幕缓冲区中的坐标；dwMaximumWindowSize字段返回控制台窗口的最大可能尺寸，这个数据是根据当前屏幕缓冲区的大小、字体和视频显示的尺寸综合得出的。下面是使用该函数的简单例子：
 
-```
+```assembly
 .data
-consoleInfo CONSOLE SCREEN BUFFER INFO
-outHandle HANDLE?
+	consoleInfo CONSOLE SCREEN BUFFER INFO
+	outHandle HANDLE	?
 .code
-INVOKE GetConsoleScreenBufferInfo,outHandle,
-ADDR consoleInfo
+	INVOKE GetConsoleScreenBufferInfo,outHandle,ADDR consoleInfo
 ```
 
 图11.2是Microsoft Visual Studio的调试器里面显示的该数据结构的图例。
@@ -1141,14 +1043,11 @@ ADDR consoleInfo
 
 SetConsoleWindowInfo函数用来设置控制台窗口在与其相关的屏幕缓冲区中的大小和位置。函数原型如下所示：
 
-```
+```assembly
 SetConsoleWindowInfo PROTO,
-hConsoleOutput:HANDLE,
-;屏幕输出句柄
-bAbsolute:DWORD,
-;坐标类型
-1pConsoleWindow:PTR SMALL_RECT
-;指向窗口矩形的坐标
+	hConsoleOutput:HANDLE,	;屏幕输出句柄
+	bAbsolute:DWORD,		;坐标类型
+	lpConsoleWindow:PTR SMALL_RECT	;指向窗口矩形的坐标
 ```
 
 bAbsolute参数指定了IpConsoleWindow参数指定的坐标应如何解释，如果bAbsolute的值是TRUE,那么坐标代表控制台窗口新的左上角和右下角的位置；如果bAbsolute的值是FALSE,那么新的坐标将被加到当前控制台坐标上面使用。
