@@ -1054,55 +1054,42 @@ bAbsolute参数指定了IpConsoleWindow参数指定的坐标应如何解释，�
 
 下面的Scroll.asm程序在屏幕缓冲区上显示50行文本，然后改变控制台窗口的位置和大小，这达到了有效地回滚文字的效果。程序中用到了SetConsoleWindowInfo函数：
 
-```
-TITLE Scrolling the Console Window
-(Scro11.asm)
+```assembly
+TITLE Scrolling the Console Window (Scro11.asm)
 INCLUDE Irvine32.inc
-data
-message BYTE " : This line of text was written "
-BYTE"to the screen buffer", odh, Oah
-messageSize DWORD($-message)
-outHandle HANDLE 0
-;标准输出句柄
-byteswritten DWORD ?
-;已写的字节数
-lineNum DWORD 0
-windowRect SMALL_RECT<0,0,60,11>
-;左、上、右、下
-code
+.data
+	message BYTE ": This line of text was written "
+			BYTE "to the screen buffer",0dh,0ah
+	messageSize DWORD ($-message)
+	outHandle 	HANDLE 0		;标准输出句柄
+	byteswritten DWORD ?		;已写的字节数
+	lineNum 	DWORD 0
+	windowRect SMALL_RECT <0,0,60,11>	;左、上、右、下
+.code
 main PROC
 INVOKE GetStdHandle,STD_OUTPUT_HANDLE
-mov outHandle,eax
+	mov outHandle,eax
 .REPEAT
-mov eax, lineNum
-call WriteDec
-;显示每行的行号
-INVOKE WriteConsole,
-outHandle,
-;控制台输出句柄
-ADDR message,
-;字符串指针
-messageSize,
-;字符串长度
-ADDR byteswritten,
-;返回已写的字节数
-inc lineNum
-;下一行的行号
-.UNTIL lineNum>50
+	mov eax, lineNum
+	call WriteDec		;显示每行的行号
+	INVOKE WriteConsole,
+		outHandle,		;控制台输出句柄
+		ADDR message,	;字符串指针
+		messageSize,	;字符串长度
+		ADDR byteswritten,	;返回已写的字节数
+		inc lineNum			;下一行的行号
+.UNTIL lineNum > 50
 ; Resize and reposition the console window relative to the
 ; screen buffer .
 INVOKE SetConsoleWindowInfo,
-outHandle,
-TRUE,
-ADDR windowRect; window rectangle
-call Readchar
-;等待按键
-call Clrscr
-;清除屏幕缓冲区
-call Readchar
-;等待第二次按键
-INVOKE ExitProcess,0
-main ENDP
+		outHandle,
+		TRUE,
+		ADDR windowRect	; window rectangle
+	call Readchar		;等待按键
+	call Clrscr			;清除屏幕缓冲区
+	call Readchar		;等待第二次按键
+	INVOKE ExitProcess,0
+	main ENDP
 END main
 ```
 
@@ -1112,35 +1099,34 @@ END main
 
 SetConsoleScreenBufferSize函数允许将屏幕缓冲区的大小设置为X列Y行。函数原型如下所示：
 
-```
+```assembly
 SetConsoleScreenBufferSize PROTO,
-hConsoleOutput:HANDLE,到屏幕缓冲区的句柄
-dwSize:COORD
-;新的屏幕缓冲区的大小
+		hConsoleOutput:HANDLE		;到屏幕缓冲区的句柄
+		dwSize:COORD				;新的屏幕缓冲区的大小
 ```
 
-## 11.1.10光标的控制
+## 11.1.10 光标的控制
 
 Win32 API提供了设置光标的大小、可见性和屏幕位置的函数，与这些函数相关的一个重要的数据结构称为CONSOLE_CURSOR_INFO,其中包含了光标大小和可见性等相关信息：
 
-```
+```assembly
 CONSOLE_CURSOR_INFO STRUCT
-dwSize DWORD ?
-bVisible DWORD ?
+	dwSize 		DWORD ?
+	bVisible 	DWORD ?
 CONSOLE_CURSOR_INFO ENDS
 ```
 
-dwSize字段是光标占字符方格大小的百分比（1~100);bVisible等于TRUE(1)的时候，光
+dwSize字段是光标占字符方格大小的百分比(1~100);bVisible等于TRUE(1)的时候，光
 标是可见的。
 
 ### GetConsoleCursorInfo函数
 
 GetConsoleCursorlnfo函数返回控制台光标的大小和可见性等信息，调用的时候需要传递给函数一个指向CONSOLE_CURSOR_INFO结构的指针：
 
-```
+```assembly
 GetConsoleCursorInfo PROTO,
-hConsoleOutput:HANDLE,
-1pConsoleCursorInfo:PTR CONSOLE_CURSOR_INFO
+	hConsoleOutput:HANDLE,
+	lpConsoleCursorInfo:PTR CONSOLE_CURSOR_INFO
 ```
 
 在默认状态下，光标尺寸等于25,也就是说光标占一个字符方格的25%大小。
@@ -1149,22 +1135,20 @@ hConsoleOutput:HANDLE,
 
 SetConsoleCursorlnfo函数设置控制台光标的大小和可见性。同样，调用的时候需要传递给函数一个CONSOLE_CURSOR_INFO结构的指针：
 
-```
+```assembly
 SetConsoleCursorInfo PROTO
-ConsoleOutput:HANDLE,
-1pConsoleCursorInfo:PTR CONSOLE_CURSOR_INFO
+	ConsoleOutput:HANDLE,
+	lpConsoleCursorInfo:PTR CONSOLE_CURSOR_INFO
 ```
 
 ### SetConsoleCursorPosition函数
 
 SetConsoleCursorPosition函数设置光标的X和Y坐标位置，调用的时候需要传递给函数一个COORD结构和控制台输出句柄：
 
-```
+```assembly
 SetConsoleCursorPosition PROTO,
-hConsoleOutput:DWORD,
-;输出句柄
-dwCursorPosition:COORD
-;屏幕X和Y坐标位置
+	hConsoleOutput:DWORD,		;输出句柄
+	dwCursorPosition:COORD		;屏幕X和Y坐标位置
 ```
 
 ## 11.1.11 文本颜色的控制
@@ -1175,12 +1159,10 @@ dwCursorPosition:COORD
 
 SetConsoleTextAtribute函数用来设置以后输出到控制台窗口的字符的前景和背景颜色。函数原型如下所示：
 
-```
+```assembly
 SetConsoleTextAttribute PROTO,
-hConsoleOutput:HANDLE,
-;控制输出句柄
-wAttributes:WORD
-;颜色属性
+	hConsoleOutput:HANDLE,		;控制输出句柄
+	wAttributes:WORD			;颜色属性
 ```
 
 颜色值存放于wAttributes参数的低位，其定义和15.3.2节中演示视频BIOS使用时的取值含义相同。
@@ -1189,17 +1171,13 @@ wAttributes:WORD
 
 WriteConsoleOutputAttribute函数复制一个颜色属性数组的值到控制台屏幕缓冲区中连续位置的字符格中，字符格的位置是可以指定的。函数原型如下所示：
 
-```
+```assembly
 WriteConsoleOutputAttribute PROTO,
-hConsoleOutput:DWORD,
-;输出句柄
-1pAttribute:PTR WORD,
-;要输出的属性
-nLength:DWORD,
-;颜色属性的数量
-dwwriteCoord:COORD,
-;首个字符格的坐标
-1pNumberOfAttrsWritten:PTRDWORD;实际输出的数量
+	hConsoleOutput:DWORD,		;输出句柄
+	lpAttribute:PTR WORD,		;要输出的属性
+	nLength:DWORD,				;颜色属性的数量
+	dwwriteCoord:COORD,			;首个字符格的坐标
+	lpNumberOfAttrsWritten:PTRDWORD;实际输出的数量
 ```
 
 IpAttribute指向一个颜色属性数组，每个数组元素的低字节中存放颜色值；nLength是数组的长度；dwWriteCoord是屏幕中要接收这些属性的字符格的起始坐标；IpNumberOfAttrsWritten指向一个变量，函数返回的时候将在此填写实际被设置了颜色属性的字符格的数量。
@@ -1208,38 +1186,41 @@ IpAttribute指向一个颜色属性数组，每个数组元素的低字节中存
 
 为了演示如何使用颜色属性，例子程序WriteColors.asm创建了一个字符数组和一个属性数组，属性数组里面的每个属性对应字符数组里面的一个字符。程序调用WriteConsoleOutputAttribute数把颜色属性复制到屏幕缓冲区中，然后调用WriteConsoleOutputCharacter函数把字符复制到屏幕缓冲区的同样位置：
 
-```
-TITLE Writing Text Colors
-(writeColors.asm)
+```assembly
+TITLE Writing Text Colors	(writeColors.asm)
 INCLUDE Irvine32.inc
 .data
-outHandle HANDLE ?
-cellswritten DWORD ?
-xyPos COORD &lt;10,2&gt;
-;字符代码数组
-buffer BYTE 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-BYTE 16,17,18,19,20
-BufSize DWORD($-buffer)
+	outHandle	 	HANDLE 	?
+	cellswritten 	DWORD  	?
+	xyPos 			COORD 	<10,2>	;字符代码数组
+	buffer 	BYTE 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+			BYTE 16,17,18,19,20
+	BufSize DWORD ($-buffer)
 ; Array of attributes :
-attributes WORD OFh , OEh , ODh , OCh , 0Bh , 0Ah , 9 , 8 , 7 , 6
-WORD 5,4,3,2,1,0F0h,0E0h,0D0h,0C0h,0B0h
+	attributes 	WORD 0Fh,0Eh,0Dh,0Ch,0Bh,0Ah,9,8,7,6
+				WORD 5,4,3,2,1,0F0h,0E0h,0D0h,0C0h,0B0h
 .code
 main PROC
 ;获取控制台标准输出的句柄
-INVOKE CetStdHandle,STD_OUTPUT_HANDLE
-mov outHandle,eax
+	INVOKE CetStdHandle,STD_OUTPUT_HANDLE
+	mov outHandle,eax
 ;设置相邻连续字符格的颜色
-INVOKE WriteConsoleOutputAttribute,
-outHandle, ADDR attributes
-BufSize, xyPos
-ADDR cellswritten
+	INVOKE WriteConsoleOutputAttribute,
+		outHandle, 
+		ADDR attributes,
+		BufSize, 
+		xyPos
+		ADDR cellswritten
 ;输出1到20的字符代码
-INVOKE WriteConsoleOutputCharacter,
-outHandle, ADDR buffer, BufSize,
-xyPos,ADDR cellswritten
-INVOKE ExitProcess,0
+	INVOKE WriteConsoleOutputCharacter,
+		outHandle, 
+		ADDR buffer, 
+		BufSize,
+		xyPos,
+		ADDR cellswritten
+	INVOKE ExitProcess,0
 ;结束程序
-main ENDP
+	main ENDP
 END main
 ```
 
@@ -1251,28 +1232,20 @@ Win32 API提供了大量的时间和日期函数。对于初学者来说，可�
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.12j9xj9dwx5s.webp)
 
-#### SYSTEMTIME结构：
+#### SYSTEMTIME结构
 
 与日期和时间相关的Win32API函数常常会用到SYSTEMTIME结构：
 
-```
+```assembly
 SYSTEMTIME STRUCT
-wYear WORD ?
-;年（4位数）
-wMonth WORD ?
-;月（1~12)
-wDayOfWeek WORD ?
-;星期（0~6)
-wDay WORD ?
-;日（1~31)
-wHour WORD ?
-;小时（0~23)
-wMinute WORD ?
-;分钟（0~59)
-wSecond WORD ?
-;秒（0~59)
-wMilliseconds WORD ?
-;毫秒（0~999)
+	wYear 		WORD ?		;年（4位数）
+	wMonth 		WORD ?		;月（1~12)
+	wDayOfWeek 	WORD ?		;星期（0~6)
+	wDay 		WORD ?		;日（1~31)
+	wHour 		WORD ?		;小时（0~23)
+	wMinute 	WORD ?		;分钟（0~59)
+	wSecond 	WORD ?		;秒（0~59)
+	wMilliseconds WORD ?	;毫秒（0~999)
 SYSTEMTIME ENDS
 ```
 
@@ -1282,25 +1255,25 @@ wDayOfWeek字段的值含义为：0=星期日，1=星期一，依次类推。由
 
 GetLocalTime函数获取当前的日期和时间，该时间已经按照系统日期和时间转换成了本地时区的时间。当调用这个函数的时候，需要传递给函数一个指向SYSTEMTIME结构的指针：
 
-```
+```assembly
 GetLocalTime PROTO,
-pSystemTime:PTR SYSTEMTIME
+	pSystemTime:PTR SYSTEMTIME
 ```
 
 下面是GetLocalTime函数的调用示例：
 
-```
+```assembly
 .data
-sysTime SYSTEMTIME
+	sysTime SYSTEMTIME
 .code
-INVOKE GetLocalTime, ADDR sysTime
+	INVOKE GetLocalTime,ADDR sysTime
 ```
 
 SetLocalTime函数设置系统的当前时间和日期，调用的时候也需要传递一个指向SYSTEMTIME结构的指针，其中包含了要设置的时间值：
 
-```
+```assembly
 SetLocalTime PROTO,
-pSystemTime:PTR SYSTEMTIME
+	pSystemTime:PTR SYSTEMTIME
 ```
 
 如果函数执行成功，返回值是非0值；如果执行失败，函数返回0。
@@ -1309,53 +1282,45 @@ pSystemTime:PTR SYSTEMTIME
 
 GetTickCount函数返回系统启动以来所经过的毫秒数：
 
-```
-GetTickCount PROTO
-;返回值在EAX中
+```assembly
+GetTickCount PROTO	;返回值在EAX中
 ```
 
 由于计数值是一个双字，所以当系统连续运行49.7天后，计数值将归0。可以在一个循环中使用这个函数来监控经过的时间，并在某个时间到达的时候退出循环。
 下面的例子程序Timer.asm测量两次调用GetTickCount之间经过的时间，并检查时间计数器值是否发生了回滚（超过了49.7天）。类似的代码可以用在很多不同的程序中：
 
-```
-TITLE Calculate Elapsed Time
-(Timer.asm)
+```assembly
+TITLE Calculate Elapsed Time	(Timer.asm)
 ; Demonstrate a simple stopwatch timer, using
 ; the Win32 GetTickCount function.
 INCLUDE Irvine32.inc
 INCLUDE macros . inc
 .data
-startTime DWORD ?
+	startTime DWORD ?
 .code
 main PROC
-INVOKE GetTickCount
-;获取起始的时间计数值
-mov startTime,eax
-;保存之
+	INVOKE GetTickCount		;获取起始的时间计数值
+	mov startTime,eax		;保存之
 ; Create a useless calculation loop .
-mov ecx,10000100h
-L1:imulebx
-imulebx
-imulebx
-loop L1
-INVOKE CetTickCount
-;获取新的时间计数值
-cmp eax,startTime
-;小于起始时间？
-jb error
-;时间回滚了
-sub eax,startTime
-;获取经过的毫秒数
-call WriteDec
-;显示
-mwrite <" milliseconds have elapsed", Odh, 0ah>
-jmp quit
+	mov 	ecx,10000100h
+L1:
+	imul	ebx
+	imul	ebx
+	imul	ebx
+	loop 	L1
+	INVOKE CetTickCount		;获取新的时间计数值
+	cmp 	eax,startTime	;小于起始时间？
+	jb 		error			;时间回滚了
+	sub 	eax,startTime	;获取经过的毫秒数
+	call 	WriteDec		;显示
+	mwrite 	<"milliseconds have elapsed",0dh,0ah>
+	jmp 	quit
 error:
-mwrite"Error:GetTickCount invalid--system has"
-mwrite <"been active for more than 49.7 days", odh, Oah>
+	mwrite	"Error:GetTickCount invalid--system has"
+	mwrite 	<"been active for more than 49.7 days", odh, Oah>
 quit:
-exit
-main ENDP
+	exit
+	main ENDP
 END main
 ```
 
@@ -1363,9 +1328,9 @@ END main
 
 程序有时需要暂停或延迟一小段时间。可以编写一个循环达到延时的目的，但循环的执行时间在不同的处理器上是不同的。除此之外，循环计算还会大量消耗CPU资源，同时降低其他程序的执行速度。Sleep函数挂起当前的线程指定的毫秒数：
 
-```
+```assembly
 Sleep PROTO,
-dwMilliseconds:DWORD
+	dwMilliseconds:DWORD
 ```
 
 (由于大多数汇编语言程序通常是单线程的，因此这里假设一个线程就代表一个程序。）线程在睡眠的时候不会占用处理器时间。
@@ -1374,48 +1339,48 @@ dwMilliseconds:DWORD
 
 Irvine32库中的GetDateTime过程返回了一个64位的整数，这个数值是自1601年1月1日开始的以100 ns为单位的计数值。这看起来有些奇怪，因为在那个时候人们还不知道计算机是什么，但是Microsoft却使用这个数值来跟踪文件的日期和时间。Win32 SDK文档中建议读者使用下面的步骤来准备系统日期和时间，以便进行其他的日期和时间计算：
 
-1. 1.调用一个函数（例如GetLocalTime)来填写SYSTEMTIME结构。
-2. 2.用SystemTimeToFileTime函数把SYSTEMTIME结构转换到FILETIME结构。
-3. 3.把FILETIME结构中的结果复制到一个64位的QWORD中。
+1. 调用一个函数（例如GetLocalTime)来填写SYSTEMTIME结构。
+2. 用SystemTimeToFileTime函数把SYSTEMTIME结构转换到FILETIME结构。
+3. 把FILETIME结构中的结果复制到一个64位的QWORD中。
 
 FILETIME结构把一个64位的QWORD值划分为两个DWORD值：
 
-```
+```assembly
 FILETIME STRUCT
-loDateTime DWORD ?
-hiDateTime DWORD ?
+	loDateTime DWORD ?
+	hiDateTime DWORD ?
 FILETIME ENDS
 ```
 
 下面的GetDateTime接收一个指向64位QWORD变量的参数，并把当前的日期和时间存储
 在这个变量中，时间格式使用FILETIME格式：
 
-```
+```assembly
 GetDateTime PROC,
-pStartTime:PTR QWORD
-LOCAL sysTime:SYSTEMTIME,f1Time:FILETIME
+	pStartTime:PTR QWORD
+	LOCAL sysTime:SYSTEMTIME,f1Time:FILETIME
 ; Gets and saves the current local date / time as a
 ; 64-bit integer ( in the Win32 FILETIME format ) .
 ;获取本地系统时间
 INVOKE GetLocalTime,
-ADDR sysTime
+		ADDR sysTime
 ;把SYSTEMTIME转换成FILETIME
-INVOKE SystemTimeToFileTime,
-ADDR sysTime,
-ADDR f1Time
+	INVOKE SystemTimeToFileTime,
+		ADDR sysTime,
+		ADDR f1Time
 ;把FILETIME转换成一个64位的整数
-mov esi, pStartTime
-mov eax,flTime.loDateTime
-mov DWORD PTR [esi],eax
-mov eax,flTime.hiDateTime
-mov DWORD PTR [esi+4],eax
-ret
+	mov esi, pStartTime
+	mov eax,flTime.loDateTime
+	mov DWORD PTR [esi],eax
+	mov eax,flTime.hiDateTime
+	mov DWORD PTR [esi+4],eax
+	ret
 GetDateTime ENDP
 ```
 
 由于返回的时间值是一个64位的整数，因此可以使用7.5节讲述的扩展精度算术运算技术进行日期的算术运算。
 
-# 11.2编写Windows图形界面应用程序
+# 11.2 编写Windows图形界面应用程序
 
 在本节中，我们来演示如何写出一个简单的Windows下的图形界面应用程序，这个程序将创建并显示一个主窗口，显示一些消息框，而且可以响应鼠标动作。下面的内容仅仅是一个简要的介绍，因为即使是要描述清楚一个最简单的Windows应用程序中的事件，也需要至少一整章的篇幅。如果读者需要更详尽的信息，请参阅Platform SDK的文档。另一份很好的文献资料是Charles Petzold所著的Programming in Windows:The Definitive Guide to the Win32API一书。
 表11.10列出了构建该程序时使用的各种库和包含文件，可以使用本书附带代码Examples\Ch11\WinApp目录下的Visual Studio项目文件构建和运行该程序。
@@ -1424,95 +1389,71 @@ GetDateTime ENDP
 
 编译时应使用选项/SUBSYSTEM:WINDOWS代替我们在前面章节中使用的/SUBSYSTEM:CONSOLE选项。程序调用了两个标准Windows库文件：kernel32.lib和user32.lib文件。
 
-### 主窗口：
+### 主窗口
 
 程序将显示一个填满整个屏幕的主窗口。下面的图例已经缩小了，以便于在书
 中印刷。
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2xzsij2i78s0.webp)
 
-## 11.2.1必须了解的数据结构
+## 11.2.1 必须了解的数据结构
 
 POINT结构定义了以像素为单位的屏幕上某个点的X和Y坐标，它可以用来定位屏幕上的某个对象的坐标，如图形对象、窗口、鼠标单击时的位置等：
 
-```
+```assembly
 POINT STRUCT
-ptX DWORD ?
-ptY DWORD ?
+	ptX DWORD ?
+	ptY DWORD ?
 POINT ENDS
 ```
 
 RECT结构定义了一个矩形的边界，left字段为矩形左边界的X坐标，top字段为矩形顶边的Y坐标。类似地，right和bottom字段的值定义了矩形右下角的坐标：
 
-```
+```assembly
 RECT STRUCT
-left
-DWORD ?
-top
-DWORD ?
-right
-DWORD?
-bottom
-DWORD ?
+	left	DWORD 	?
+	top		DWORD 	?
+	right	DWORD	?	
+	bottom	DWORD 	?
 RECT ENDS
 ;MSGStruct结构定义了Windows消息需要的相关数据：
 MSCStruct STRUCT
-msgwnd
-DWORD ?
-msgMessage DWORD ?
-msgWparam DWORD ?
-msgLparam DWORD ?
-msgTime
-DWORD ?
-msgPt
-POINT<>
+	msgwnd		DWORD 	?
+	msgMessage 	DWORD 	?
+	msgWparam 	DWORD 	?
+	msgLparam 	DWORD 	?
+	msgTime		DWORD 	?
+	msgPt		POINT	<>
 MSCStruct ENDS
 ```
 
 WNDCLASS结构定义了一个窗口类，程序中的每个窗口必须属于一个窗口类，所以每个程序必须为它的主窗口创建窗口类。在能够显示主窗口之前，窗口类必须首先在系统里面注册：
 
-```
+```assembly
 WNDCLASS STRUC
-style
-DWORD?
-;窗口风格
-1pfnWndProc
-DWORD ?
-;窗口过程地址
-cbClsExtra
-DWORD ?
-;共享内存
-cbwndExtra
-DWORD ?
-;额外定义的数据
-hInstance
-DWORD ?
-;当前程序的句柄
-hIcon
-DWORD ?
-;图标句柄
-hCursor
-DWORD ?
-;光标句柄
-hbrBackground DWORD ?
-;背景画刷句柄
-1pszMenuName
-DWORD ?
-;菜单名称的指针
-IpszClassName DWORD ?
-;类名称的指针
+	style		DWORD	?	;窗口风格
+	lpfnWndProc	DWORD 	?	;窗口过程地址
+	cbClsExtra	DWORD 	?	;共享内存
+	cbwndExtra	DWORD 	?	;额外定义的数据
+	hInstance	DWORD 	?	;当前程序的句柄
+	hIcon		DWORD 	?	;图标句柄
+	hCursor		DWORD 	?	;光标句柄
+	hbrBackground DWORD ?	;背景画刷句柄
+	lpszMenuName  DWORD ?	;菜单名称的指针
+	IpszClassName DWORD ?	;类名称的指针
 WNDCLASS ENDS
 ```
 
 以下是这些字段的简要介绍：
-style是一些不同风格选项的组合，如WS_CAPTION和WS_BORDER,这个字段影响窗口的外观和行为。
 
-- ·IpfnWndProc是指向一个子程序的指针，这个子程序在我们自己的程序中，用来接收由用户触发的事件消息。
+- style是一些不同风格选项的组合，如WS_CAPTION和WS_BORDER,这个字段影响窗口的外观和行为。
+
+- IpfnWndProc是指向一个子程序的指针，这个子程序在我们自己的程序中，用来接收由用户触发的事件消息。
 - cbClsExtra定义了这个窗口类所属的所有窗口都可以共享的内存，这个参数可以指定为NULL。
-- ·cbWndExtra参数为每个窗口实例分配一些额外的内存。
-- ·hInstance参数用来保存当前运行程序的句柄。
-- ·hIcon和hCursor参数为当前程序使用的图标和光标句柄。
-- ·hbrBackground参数为背景颜色画刷的句柄。
+- cbWndExtra参数为每个窗口实例分配一些额外的内存。
+- hInstance参数用来保存当前运行程序的句柄。
+- hIcon和hCursor参数为当前程序使用的图标和光标句柄。
+- hbrBackground参数为背景颜色画刷的句柄。
 - IpszMenuName指向一个菜单名称字符串。
 - IpszClassName指向一个以0结尾的窗口类名称字符串。
 
@@ -1520,63 +1461,65 @@ style是一些不同风格选项的组合，如WS_CAPTION和WS_BORDER,这个字�
 
 程序显示文本的最简单方法是把文本放到一个消息框中，消息框会弹出并直到用户按下了上面的某个按钮为止。Win32API中的MessageBox函数显示一个简单的消息框，它的函数原型如下所示：
 
-```
+```assembly
 MessageBox PROTO,
-hwnd : DWORD ,
-1pText:PTR BYTE,
-7pCaption:PTR BYTE,
-uType:DWORD
+	hwnd:DWORD ,
+	lpText:PTR BYTE,
+	lpCaption:PTR BYTE,
+	uType:DWORD
 ```
 
 hWnd是当前窗口的句柄；lpText指向要在消息框中显示的以0结尾的字符串；IpCaption指向要显示在消息框标题栏上的以0结尾的字符串；style参数是一个整数，用来描述消息框中的图标（可选）和按钮（必选）的样式。按钮由MB_OK或MB_YESNO等常量定义，图标由MB_ICONQUESTION等常量定义。当想要显示一个消息框的时候，可以把这些常量加在一起以便同时显示图标和按钮：
 
-```
-INVOKE MessageBox, hwnd, ADDR QuestionText,
-ADDR QuestionTitle,MB_OK+MB_ICONQUESTION
+```assembly
+INVOKE MessageBox, 
+	hwnd, 
+	ADDR QuestionText,
+	ADDR QuestionTitle,
+	MB_OK+MB_ICONQUESTION
 ```
 
 ## 11.2.3 WinMain 过程
 
 每个Windows应用程序都需要一个启动过程，通常名为WinMain,它负责以下的工作：
 
-- ·获取当前程序的句柄。
-- ·装载程序使用的图标和鼠标光标。
-- ·注册主窗口使用的窗口类，并且指定用来接收窗口事件消息的过程。
+- 获取当前程序的句柄。
+- 装载程序使用的图标和鼠标光标。
+- 注册主窗口使用的窗口类，并且指定用来接收窗口事件消息的过程。
 - 创建主窗口。
 - 显示并更新主窗口。
-- ·开始一个消息循环来接收和分派处理消息，循环会一直持续到用户关闭了应用程序窗口。
+- 开始一个消息循环来接收和分派处理消息，循环会一直持续到用户关闭了应用程序窗口。
 
 WinMain中包含一个消息循环，使用GetMessage从程序的消息队列中返回下一个可用的消息。如果GetMessage取到WM_QUIT消息，那么函数返回0,通知WinMain终止程序。对于其他消息，WinMain会把它们传递给DispatchMessage函数，由该函数把消息分发给程序的WinProc过程。要了解更多关于消息方面的知识，可在Platform SDK文档中搜索“Windows Messages"。
 
-### 11.2.4WinProc过程
+### 11.2.4 WinProc过程
 
 WinProc过程接收并处理所有和窗口相关的事件消息，大部分的事件是由用户单击、拖动鼠标或按下了一个键盘按键等动作而引起的。该过程的任务是解译每个消息。如果某个消息是可以辨认的，那么运行和该消息对应的任务。下面是过程的声明：
 
-```
+```assembly
 WinProc PROC,
-hwnd:DWORD,
-;窗口句柄
-localMsg:DWORD,
-;消息ID
-wParam:DWORD,
-;参数1(可变）
-1Param:DWORD
-;参数2(可变）
+	hwnd:DWORD,		;窗口句柄
+	localMsg:DWORD,	;消息ID
+	wParam:DWORD,	;参数1(可变）
+	lParam:DWORD	;参数2(可变）
 ```
 
 根据不同的消息ID,第3个参数和第4个参数的含义是不同的。如当鼠标被按下的时候，IParam参数里面包含的是鼠标按下点的X和Y坐标。在下面马上要看到的例子中，WinProc过程处理了三种消息：
 
-- ·WM_LBUTTONDOWN,用户按下鼠标左键的时候产生。
-- ·WM_CREATE,表明主窗口刚刚被创建。
-- ·WM_CLOSE,表明主窗口即将被关闭。
+- WM_LBUTTONDOWN,用户按下鼠标左键的时候产生。
+- WM_CREATE,表明主窗口刚刚被创建。
+- WM_CLOSE,表明主窗口即将被关闭。
 
 举例来说，过程中的下面几行代码处理WM_LBUTTONDOWN消息，处理方法是调用MessageBox函数向用户显示一条提示信息：
 
-```
-.IF eax==WM_LBUTTONDOWN
-INVOKE MessageBox, hwnd, ADDR PopupText,
-ADDR PopupTitle, MB_OK
-jmp WinProcExit
+```assembly
+.IF eax == WM_LBUTTONDOWN
+	INVOKE MessageBox, 
+			hwnd, 
+			ADDR PopupText,
+			ADDR PopupTitle, 
+			MB_OK
+	jmp WinProcExit
 ```
 
 用户看到的结果如图11.5所示。任何我们不想处理的消息都应该传递给Windows的默认消息处理函数DefWindowProc。
@@ -1587,157 +1530,202 @@ jmp WinProcExit
 
 ErrorHandler过程是可选的，如果程序的主窗口在注册和创建的过程中发生错误，就会调用这个过程。举例来说，调用RegisterClass函数时，如果窗口类成功注册，那么函数会返回一个非0值。若函数返回0,则可调用ErrorHandler来显示出错信息并退出程序的执行：
 
-```
+```assembly
 INVOKE RegisterClass, ADDR Mainwin
-.IF eax==0
-call ErrorHandler
-jmp Exit_Program
+.IF eax == 0
+	call 	ErrorHandler
+	jmp 	Exit_Program
 .ENDIF
 ```
 
 ErrorHandler过程完成下面几件重要的事情：
 
-- ·调用GetLastError函数获取系统错误代码。
-- ·调用FormatMessage函数获取操作系统格式化的出错信息字符串。
-- ·调用MessageBox显示包含出错信息的消息框。
-- ·调用LocalFree函数释放为出错信息字符串分配的内存。
+- 调用GetLastError函数获取系统错误代码。
+- 调用FormatMessage函数获取操作系统格式化的出错信息字符串。
+- 调用MessageBox显示包含出错信息的消息框。
+- 调用LocalFree函数释放为出错信息字符串分配的内存。
 
 ## 11.2.6 程序清单
 
 看到下面程序的篇幅请不要伤心！因为里面的大部分代码都可以在任何的Windows应用程序中重复使用：
 
-```
-TITLE Windows Application
-(WinApp.asm)
+```assembly
+TITLE Windows Application	(WinApp.asm)
 ; This program displays a resizable application window and
-several popup message boxes . Special thanks to Tom Joyce
+; several popup message boxes . Special thanks to Tom Joyce
 ; for the first version of this program.
-386
-model flat,STDCALL
+.386
+.model flat,STDCALL
 INCLUDE Graphwin . inc
 ;==###########*****= DATA ===#==#*===============
-data
-AppLoadMsgTitle BYTE "Application Loaded",0
-AppLoadMsgText BYTE "This window displays when the WM_CREATE"
-BYTE "message is received",0
-PopupTitle BYTE"Popup Window",0
-PopupText BYTE "This window was activated by a "
-BYTE "WM_LBUTTONDOWN message",0
-GreetTitle BYTE "Main Window Active",0
-GreetText BYTE "This window is shown immediately after "
-BYTE"CreateWindow and UpdateWindow are called.",0
-CloseMsg BYTE "WM_CLOSE message received",0
-ErrorTitle BYTE "Error",0
-WindowName BYTE "ASM Windows App", 0
-className BYTE "ASMWin",0
+.data
+	AppLoadMsgTitle BYTE "Application Loaded",0
+	AppLoadMsgText 	BYTE "This window displays when the WM_CREATE"
+					BYTE "message is received",0
+	PopupTitle 		BYTE"Popup Window",0
+	PopupText 		BYTE "This window was activated by a "
+					BYTE "WM_LBUTTONDOWN message",0
+	GreetTitle 		BYTE "Main Window Active",0
+	GreetText 		BYTE "This window is shown immediately after "
+					BYTE "CreateWindow and UpdateWindow are called.",0
+	CloseMsg 		BYTE "WM_CLOSE message received",0
+	ErrorTitle 		BYTE "Error",0
+	WindowName 		BYTE "ASM Windows App", 0
+	className 		BYTE "ASMWin",0
 ; Define the Application's Window class structure .
-Mainwin WNDCLASS <NULL,WinProc,NULL,NULL,NULL,NULL,NULL,\
-COLOR_WINDOW,NULL,className>
-msg MSGStruct < >
-winRect RECT &lt;&gt;
-hMainWnd DWORD ?
-hInstance DWORD ?
+	Mainwin WNDCLASS <NULL,WinProc,NULL,NULL,NULL,NULL,NULL,COLOR_WINDOW,NULL,className>
+	msg 			MSGStruct < >
+	winRect 		RECT < >
+	hMainWnd 		DWORD ?
+	hInstance 		DWORD ?
 ;
 .code
 WinMain PROC
 ;获取当前进程的句柄
-INVOKE GetModuleHandle, NULL
-mov hinstance,eax
-mov MainWin.hInstance,eax
+INVOKE GetModuleHandle, 
+		NULL
+	mov 	hinstance,eax
+	mov 	MainWin.hInstance,eax
 ;加载程序的光标和图标
-INVOKE LoadIcon,NULL,IDI_APPLICATION
-mov MainWin. hIcon, eax
-INVOKE LoadCursor,NULL,IDC_ARROW
-mov MainWin . hCursor , eax
+	INVOKE 	LoadIcon,
+			NULL,
+			IDI_APPLICATION
+	mov 	MainWin.hIcon,eax
+	INVOKE 	LoadCursor,
+			NULL,
+			IDC_ARROW
+	mov 	MainWin.hCursor,eax
 ;注册窗口类
-INVOKE RegisterClass, ADDR Mainwin
+	INVOKE 	RegisterClass, 
+			ADDR Mainwin
 .IF eax==0
-call ErrorHandler
-jmp Exit_Program
+	call 	ErrorHandler
+	jmp 	Exit_Program
 .ENDIF
 ;创建应用程序的主窗口
-INVOKE CreateWindowEx, 0, ADDR className,
-ADDR WindowName,MAIN_WINDOW_STYLE,
-CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
-CW_USEDEFAULT,NULL,NULL,hInstance,NULL
+	INVOKE CreateWindowEx, 
+		0, 
+		ADDR className,
+		ADDR WindowName,
+		MAIN_WINDOW_STYLE,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		NULL,
+		NULL,
+		hInstance,
+		NULL
 ;如果CreateWindowEx失败，显示一条消息并退出
 .IF eax==0
-call ErrorHandler
-jmp Exit_Program
+	call 	ErrorHandler
+	jmp 	Exit_Program
 .ENDIF
 ;保存窗口句柄，显示并绘制窗口
-mov hMainwnd,eax
-INVOKE ShowWindow, hMainwnd, SW SHOW
-INVOKE UpdateWindow, hMainwnd
+	mov 	hMainwnd,eax
+	INVOKE 	ShowWindow, 
+			hMainwnd, 
+			SW_SHOW
+	INVOKE 	UpdateWindow, 
+			hMainwnd
 ;显示欢迎消息
-INVOKE MessageBox, hMainwnd, ADDR GreetText,
-ADDR GreetTitle,MB_OK
+	INVOKE MessageBox,
+    		hMainwnd, 
+    		ADDR GreetText,
+			ADDR GreetTitle,
+			MB_OK
 ;开始程序的持续消息处理循环
-Message Loop :
+Message_Loop:
 ;从队列中获取下一条消息
-INVOKE GetMessage, ADDR msg, NULL, NULL, NULL
+	INVOKE GetMessage, 
+			ADDR msg, 
+			NULL, 
+			NULL, 
+			NULL
 ;若无消息则退出
-.IF eax==0
-jmp Exit Program
-ENDIF
+	.IF eax==0
+		jmp Exit_Program
+	.ENDIF
 ;把消息转发给程序的WinProc过程
-INVOKE DispatchMessage, ADDR msg
-jmp Message_Loop
-Exit Program:
-INVOKE ExitProcess,0
+	INVOKE DispatchMessage, 
+			ADDR msg
+	jmp Message_Loop
+Exit_Program:
+	INVOKE ExitProcess,0
 WinMain ENDP
 ```
 
 在上面的循环循环代码中，msg结构被传递给GetMessage函数，该函数将填写这个结构，接下来该结构被传递给了DispatchMessage函数。
 
-```
+```assembly
 WinProc PROC,
-hwnd:DWORD,localMsg:DWORD,wParam:DWORD,1Param:DWORD
-;The application's message handler,which handles
+		hwnd:DWORD,localMsg:DWORD,wParam:DWORD,1Param:DWORD
+; The application's message handler,which handles
 ; application-specific messages. All other messages
 ; are forwarded to the default Windows message
 ; handler .
-mov eax, localMsg
-.IF eax==WM_LBUTTONDOWN;鼠标按键消息？
-INVOKE MessageBox, hwnd, ADDR PopupText,
-ADDR PopupTitle, MB_OK
-jmp WinProcExit
-ELSEIFeax==WM_CREATE;创建窗口消息？
-INVOKE MessageBox, hwnd, ADDR AppLoadMsgText,
-ADDR AppLoadMsgTitle,MB_OK
-jmp WinProcExit
-ELSEIFeax==WM_CLOSE;关闭窗口消息？
-INVOKE MessageBox, hWnd, ADDR. CloseMsg,
-ADDR WindowName,MB_OK
-INVOKE PostQuitMessage,0
-jmp WinProcExit
-.ELSE
+	mov eax, localMsg
+	.IF eax == WM_LBUTTONDOWN		;鼠标按键消息？
+		INVOKE MessageBox, 
+				hwnd, 
+				ADDR PopupText,
+				ADDR PopupTitle, 
+				MB_OK
+		jmp WinProcExit
+	.ELSEIF eax == WM_CREATE		;创建窗口消息？
+		INVOKE MessageBox,
+        		hwnd, 
+        		ADDR AppLoadMsgText,
+				ADDR AppLoadMsgTitle,
+				MB_OK
+		jmp 	WinProcExit
+	.ELSEIF	eax == WM_CLOSE			;关闭窗口消息？
+		INVOKE MessageBox, 
+			hWnd, 
+			ADDR CloseMsg,
+			ADDR WindowName,
+			MB_OK
+		INVOKE PostQuitMessage,
+			0
+		jmp WinProcExit
+	.ELSE
 ;其他消息？
-INVOKE DefWindowProc, hwnd, localMsg, wParam, 1Param
-jmp WinProcExit
+	INVOKE DefWindowProc, 
+			hwnd, 
+			localMsg, 
+			wParam, 
+			lParam
+	jmp 	WinProcExit
 .ENDIF
 WinProcExit:
-ret
+		ret
 WinProc ENDP
 ErrorHandler PROC
 ;Display the appropriate system error message.
 .data
-pErrorMsg DWORD ?
-;指向错误消息的指针
-messageID DWORD ?
+	pErrorMsg DWORD ?		;指向错误消息的指针
+	messageID DWORD ?
 .code
-INVOKE GetLastError;在EAX中返回消息ID
-mov messageID,eax
-;获取对应的消息字符串
-INVOKE FormatMessage, FORMAT_MESSAGE_ALLOCATE_BUFFER + \
-FORMAT_MESSAGE_FROM_SYSTEM,NULL,messageID,NULL,
-ADDR pErrorMsg, NULL, NULI
+	INVOKE GetLastError		;在EAX中返回消息ID
+	mov messageID,eax		;获取对应的消息字符串
+	INVOKE FormatMessage,
+    	FORMAT_MESSAGE_ALLOCATE_BUFFER+FORMAT_MESSAGE_FROM_SYSTEM,
+    	NULL,
+    	messageID,
+    	NULL,
+		ADDR pErrorMsg, 
+		NULL, 
+		NULL
 ;显示错误消息
-INVOKE MessageBox, NULL, pErrorMsg, ADDR ErrorTitle,
-MB_ICONERROR+MB_OK
+	INVOKE MessageBox, 
+		NULL, 
+		pErrorMsg, 
+		ADDR ErrorTitle,
+		MB_ICONERROR+MB_OK
 ;释放消息字符串
-INVOKE LocalFree, pErrorMsg
-ret
+	INVOKE LocalFree,
+    	pErrorMsg
+	ret
 ErrorHandler ENDP
 END WinMain
 ```
@@ -1770,17 +1758,17 @@ END WinMain
 
 动态内存分配也称为堆（内存）分配（Heap Allocation),是程序设计语言提供的一种非常有用的工具，用于为创建的对象、数组和其他结构保留内存。例如，在Java中，类似下面的语句会导致程序为创建的String对象保留内存：
 
-```
-String str=new String("abcde");
+```c
+String str = new String("abcde");
 ```
 
 类似地，在C++中，可能会需要为一个整数数组分配内存空间，其大小来自于个变量：
 
-```
+```c
 int size;
-cin>>size;
+cin >> size;
 //用户输入的大小
-int array[]=new int[size];
+int array[] = new int[size];
 ```
 
 C/C++和Java都有内建的运行时堆管理器，用于处理程序的存储分配和存储释放请求，堆管理器通常在程序启动时请求操作系统分配一大块内存，堆管理器创建一个空闲存储块指针链表在接到分配请求时，把一个合适的内存块标记为保留并返回指向该内存块的指针，其后在接到针对同一内存块的释放请求时，堆管理器把该内存块放回空闲存储块的指针链表中（或释放该内存块）。每次新的分配请求到达时，堆管理器都会首先扫描空闲存储块链表，查找第一个足够大的为存块以满足分配请求。
@@ -1789,121 +1777,112 @@ C/C++和Java都有内建的运行时堆管理器，用于处理程序的存储�
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.c8jln1p0lz4.webp)
 
-### GetProcessHeap:
+### GetProcessHeap
 
 如果对使用程序当前拥有的默认堆满意，可以使用GetProcessHeap函数，该函数无参数，在EAX中返回默认堆的句柄。函数原型如下：
 
-```
+```assembly
 GetProcessHeap PROTO
-调用示例：
+;调用示例：
 .data
-hHeap HANDLE ?
+	hHeap HANDLE ?
 .code
-INVOKE GetProcessHeap
-.IF eax==NULL
-;不能获取句柄
-jmp quit
-.ELSE
-mov hHeap,eax
-;成功获取句柄
-.ENDIF
-;HeapCreate:HeapCreate允许为当前程序创建一个新的私有堆。函数原型如下：
+	INVOKE GetProcessHeap
+	.IF eax == NULL		;不能获取句柄
+		jmp quit
+	.ELSE
+		mov hHeap,eax	;成功获取句柄
+	.ENDIF
+```
+
+HeapCreate:HeapCreate允许为当前程序创建一个新的私有堆。函数原型如下：
+
+```assembly
 HeapCreate PROTO,
-f10ptions:DWORD,
-堆分配选项
-dwInitialSize:DWORD,
-堆的初始大小，以字节为单位es
-dwMaximumSize:DWORD
-堆的最大尺寸值，以字节为单位，es
+	flOptions:DWORD,		;堆分配选项
+	dwInitialSize:DWORD,	;堆的初始大小，以字节为单位es
+	dwMaximumSize:DWORD		;堆的最大尺寸值，以字节为单位，es
 ```
 
-调用时把f1Options设为NULL,把dwInitialSize设置为堆的初始大小，实际的初始大小是该值按页边界向上舍人后的值。当调用HeapAlloc分配内存块时，如果堆的大小超过堆的初始大小，堆将自动增长，上限是dwMaximumSize参数（按页边界向上舍入）指定的值。在调用该函数之后，如果堆未成功创建，则在EAX中返回NULL。下面是调用示例：
+调用时把flOptions设为NULL,把dwInitialSize设置为堆的初始大小，实际的初始大小是该值按页边界向上舍人后的值。当调用HeapAlloc分配内存块时，如果堆的大小超过堆的初始大小，堆将自动增长，上限是dwMaximumSize参数（按页边界向上舍入）指定的值。在调用该函数之后，如果堆未成功创建，则在EAX中返回NULL。下面是调用示例：
 
-```
-HEAP_START=2000000
-;2MB
-HEAP_MAX=400000000
-;400MB
+```assembly
+HEAP_START  = 2000000	;2MB
+HEAP_MAX	= 400000000	;400MB
 .data
-hHeap HANDLE?
-;堆的句柄
+	hHeap HANDLE	?	;堆的句柄
 .code
-INVOKE HeapCreate,0,HEAP_START,HEAP_MAX
-.IF eax==NULL
-;堆未创建
-call WritewindowsMsg
-;显示错误信息
-jmp quit
-.ELSE
-mov hHeap,eax
-;成功获取句柄
-.ENDIF
+	INVOKE HeapCreate,0,HEAP_START,HEAP_MAX
+	.IF eax == NULL	;堆未创建
+		call WritewindowsMsg	;显示错误信息
+		jmp quit
+	.ELSE
+		mov hHeap,eax				;成功获取句柄
+	.ENDIF
 ```
 
-### HeapDestroy:
+### HeapDestroy
 
 HeapDestroy销毁一个现存的私有堆（通过调用HeapCreate创建的）。调用
 月时传递要销毁的堆的句柄：
 
-```
+```assembly
 .data
-hHeap HANDLE ?
-;堆的句柄
+	hHeap HANDLE ?	;堆的句柄
 .code
-INVOKE HeapDestroy, hHeap
-.IF eax == NULL
-call WritewindowsMsg
-;显示错误消息
-.ENDIF
-HeapAlloc:HeapAlloc从堆中分配一块内存。函数原型如下：
-HeapA11oc PROTO,
-hHeap:HANDLE,
-;堆的句柄
-dwFlags:DWORD,
-;堆分配控制标志
-dwBytes:DWORD
-;要分配的字节数
+	INVOKE HeapDestroy, hHeap
+	.IF eax == NULL
+		call WritewindowsMsg	;显示错误消息
+	.ENDIF
+```
+
+#### HeapAlloc
+
+HeapAlloc从堆中分配一块内存。函数原型如下：
+
+```assembly
+HeapAllooc PROTO,
+	hHeap:HANDLE,	;堆的句柄
+	dwFlags:DWORD,	;堆分配控制标志
+	dwBytes:DWORD	;要分配的字节数
 ```
 
 调用时传递下面的参数：
 
-- ·hHeap是通过调用GetProcessHeap或HeapCreate获取的32位堆句柄
+- hHeap是通过调用GetProcessHeap或HeapCreate获取的32位堆句柄
 - dwFlags是包含一个或多个标志值的双字，可以把该值设为HEAP_ZERO_MEMORY,此时分配的内存块将以0初始化。
 - dwBytes是表示要分配的内存块大小的双字，大小是以字节为单位计算的。如果调用成功，EAX中返回分配的内存块的指针；
 
 如果调用失败，EAX中返回NULL。下面的代码从hHeap标识的堆中分配1000个字节并以0初始化：
 
-```
+```assembly
 .data
-hHeap HANDLE ?
-;堆句柄
-pArray DWORD ?
-;指向数组的指针
+	hHeap HANDLE ?	;堆句柄
+	pArray DWORD ?	;指向数组的指针
 .code
-INVOKE HeapAlloc,hHeap,HEAP_ZERO_MEMORY,1000
-.IF eax == NULL
-mwrite"HeapAlloc failed"
-jmp quit
-.ELSE
-mov pArray,eax
-.ENDIF
+	INVOKE HeapAlloc,hHeap,HEAP_ZERO_MEMORY,1000
+	.IF eax == NULL
+		mwrite "HeapAlloc failed"
+		jmp quit
+	.ELSE
+		mov pArray,eax
+	.ENDIF
 ```
 
-### HeapFree:
+### HeapFree
 
-HeapFree释放以前从堆中分配的内存块，内存块是以堆句柄和内存块的地址标
-识的：
+HeapFree释放以前从堆中分配的内存块，内存块是以堆句柄和内存块的地址标识的：
 
-```
+```assembly
 HeapFree PROTO,
-hHeap:HANDLE,
-dwFlags:DWORD,
-1 pMem : DWORD
+	hHeap:HANDLE,
+	dwFlags:DWORD,
+	lpMem:DWORD
 ```
 
 第一个参数是包含要释放内存块的堆的句柄，第二个参数通常是0,第三个参数是指向要释放内存块的指针。如果内存块成功释放，返回非0值；如果释放失败，则返回0。下面是调用示例：
 
-```
+```assembly
 INVOKE HeapFree,hHeap,0,pArray
 ```
 
@@ -1911,197 +1890,174 @@ INVOKE HeapFree,hHeap,0,pArray
 
 如果调用HeapCreate,HeapDestroy,GetProcessHeap时出错，可以调用GetLastError API函数或调用Irvine32库中的WriteWindowsMsg函数获取出错的细节。下面的代码调用了Heap Create函数，其中包含了错误处理代码：
 
-```
+```assembly
 INVOKE HeapCreate, 0, HEAP_START, HEAP_MAX
-IFeax==NULL
-;失败了？
-call writewindowsMsg
-;显示错误消息
+.IF	eax==NULL	;失败了？
+	call writewindowsMsg	;显示错误消息
 .ELSE
-mov hHeap , eax
-;成功
+	mov hHeap,eax			;成功
 .ENDIF
 ```
 
 另一方面，当HeapAlloc函数执行失败时，它不设置系统错误代码，因此不能调用GetLastError或WriteWindowsMsg。
 
-## 11.3.1堆测试程序
+## 11.3.1 堆测试程序
 
 下面的例子（Heaptestl.asm)使用动态内存分配的方法创建了一个1000字节的数组，使用的是进程的默认堆：
 
-```
-Title Heap Test #1
-(Heaptest1.asm)
+```assembly
+Title Heap Test #1	(Heaptest1.asm)
 INCLUDE Irvine32.inc
 ; This program uses dynamic memory allocation to allocate and
 ; fill an array of bytes.
 .data
-ARRAY_SIZE=1000
-FILL_VAL EQU OFFh
-hHeap HANDLE?
-;进程堆的句柄
-pArray DWORD ?
-内存块的指针
-newHeap DWORD ?
-;新堆的句柄
-str1 BYTE"Heap size is:",0
+	ARRAY_SIZE = 1000
+	FILL_VAL EQU OFFh
+	hHeap 	HANDLE	?		;进程堆的句柄
+	pArray 	DWORD 	?		;内存块的指针
+	newHeap DWORD 	?		;新堆的句柄
+	str1 	BYTE	"Heap size is:",0
 .code
 main PROC
-INVOKE GetProcessHeap
-;获取程序默认堆的句柄
-.IF eax==NULL
-;失败了？
-call WritewindowsMsg
-jmp quit
-.ELSE
-mov hHeap , eax
-;成功
-.ENDIF
-call allocate_array
-jnc arrayok
-;失败了（CF=1)?
-call WriteWindowsMsg
-call Crlf
-jmp quit
+	INVOKE GetProcessHeap	;获取程序默认堆的句柄
+	.IF eax == NULL			;失败了？
+		call WritewindowsMsg
+		jmp quit
+	.ELSE
+		mov hHeap,eax		;成功
+	.ENDIF
+	call 	allocate_array
+	jnc 	arrayok				;失败了（CF=1)?
+	call 	WriteWindowsMsg
+	call 	Crlf
+	jmp 	quit
 arrayok:
 ;成功，可以填充数组了
-call fill_array
-call display_array
-call Crlf
+	call 	fill_array
+	call 	display_array
+	call 	Crlf
 ; free the array
-INVOKE HeapFree, hHeap, 0, pArray
+	INVOKE HeapFree, 
+		hHeap, 
+		0, 
+		pArray
 quit:
-exit
-main ENDP
+		exit
+main 	ENDP
 allocate_array PROC USES eax
 ; Dynamically allocates space for the array .
 ; Receives : nothing
 ; Returns : CF = 0 if allocation succeeds .
-INVOKE HeapAlloc, hHeap, HEAP_ZERO_MEMORY, ARRAY_SIZE
-.IF eax==NULL
-stc
-;返回时CF=1
-.ELSE
-mov pArray , eax
-;保存指针
-clc
-;返回时CF=0
-.ENDIF
-ret
+INVOKE HeapAlloc, 
+		hHeap, 
+		HEAP_ZERO_MEMORY, 
+		ARRAY_SIZE
+	.IF eax==NULL
+		stc		;返回时CF=1
+	.ELSE
+		mov pArray,eax	;保存指针
+		clc		;返回时CF=0
+	.ENDIF
+	ret
 allocate_array ENDP
 fill_array PROC USES ecx edx esi
 ; Fills all array positions with a single character .
 ; Receives : nothing
 ; Returns : nothing
-mov ecx, ARRAY_SIZE
-;循环计数器
-mov esi,pArray
-;指向数组
-L1: mov BYTE PTR [esi], FILL_VAL
-;填充每个字节
-incesi
-;下一个字节
-loop L1
-ret
+	mov 	ecx,ARRAY_SIZE		;循环计数器
+	mov 	esi,pArray			;指向数组
+L1: 
+	mov 	BYTE PTR [esi],FILL_VAL	;填充每个字节
+	inc		esi					;下一个字节
+	loop 	L1
+	ret
 fill_array ENDP
 display_array PROC USES eax ebx ecx esi
 ; Displays the array
 ; Receives : nothing
 ; Returns : nothing
-mov ecx,ARRAY_SIZE;循环计数器
-mov esi, pArray
-;指向数组
-L1: mov al,[esi]
-;取一个字节
-mov ebx, TYPE BYTE
-call WriteHexB
-;显示之
-inc esi
-;下一个字节
-loop L1
-ret
+	mov 	ecx,ARRAY_SIZE;循环计数器
+	mov 	esi,pArray		;指向数组
+L1: 
+	mov 	al,[esi]		;取一个字节
+	mov 	ebx,TYPE BYTE
+	call 	WriteHexB		;显示之
+	inc 	esi				;下一个字节
+	loop 	L1
+	ret
 display_array ENDP
 END main
 ```
 
 下面的例子（Heaptest2.asm)使用动态内存分配的方法循环分配2000个大约0.5MB的内存块：
 
-```
-Title Heap Test #2
-(Heaptest2.asm)
+```assembly
+Title Heap Test #2	(Heaptest2.asm)
 INCLUDE Irvine32.inc
 ; Creates a heap and allocates multiple memory blocks,
 ; expanding the heap until it fails.
 .data
-HEAP_START=2000000
-;2MB
-HEAP_MAX=400000000
-;400MB
-BLOCK_SIZE = 500000
-;.5MB
-hHeap HANDLE ?
-;堆的句柄
-pData DWORD ?
-;内存块指针
-str1 BYTE Odh, Oah, "Memory allocation failed", Odh, Oah, 0
+	HEAP_START  = 2000000	;2MB
+	HEAP_MAX	= 400000000	;400MB
+	BLOCK_SIZE  = 500000	;.5MB
+	hHeap 	HANDLE 	?		;堆的句柄
+	pData 	DWORD 	?		;内存块指针
+	str1 	BYTE 0dh,0ah,"Memory allocation failed",0dh,0ah,0
 .code
 main PROC
-INVOKE HeapCreate, 0, HEAP_START, HEAP_MAX
-IFeax==NULL
-;失败了？
-call WritewindowsMsg
-call Crlf
-jmp quit
-.ELSE
-mov hHeap,eax
-;成功
-.ENDIF
-mov ecx,2000
-;循环计数器
-L1: call allocate_block
-;分配一块内存
-.IF Carry?
-;失败了？
-mov edx, OFFSET str1
-;显示出错消息
-call WriteString
-jmp quit
-.ELSE
-;否：打印一个点
-mov al,'.'
-;显示进度
-call WriteChar
-.ENDIF
+	INVOKE HeapCreate, 
+			0, 
+			HEAP_START, 
+			HEAP_MAX
+	.IF	eax==NULL	;失败了？
+		call WritewindowsMsg
+		call Crlf
+		jmp quit
+	.ELSE
+		mov hHeap,eax		;成功
+	.ENDIF
+	mov ecx,2000		;循环计数器
+L1: 
+	call allocate_block	;分配一块内存
+	.IF Carry?		;失败了？
+		mov edx,OFFSET str1	;显示出错消息
+		call WriteString
+		jmp quit
+	.ELSE
+		mov al,'.' 		;否：打印一个点
+		call WriteChar 	;显示进度
+	.ENDIF
 ;call free_block
 ;可以注释/反注释该行观察效果
-loop L1
+	loop L1
 quit:
-INVOKE HeapDestroy,hHeap;销毁堆
-.IF eax == NULL
-;失败了？
-call WritewindowsMsg
-;是：显示错误消息
-call Crlf
-.ENDIF
-exit
+	INVOKE HeapDestroy,hHeap	;销毁堆
+	.IF eax == NULL		;失败了？
+		call WritewindowsMsg	;是：显示错误消息
+		call Crlf
+	.ENDIF
+		exit
 main ENDP
 allocate_block PROC USES ecx
 ;分配一块内存并以0填充
-INVOKE HeapAlloc,hHeap,HEAP_ZERO_MEMORY,BLOCK_SIZE
-.IF eax==NULL
-stc
-;返回时CF=1
-.ELSE
-mov pData,eax
-;保存指针
-clc
-;返回时CF=0
-.ENDIF
-ret
+INVOKE HeapAlloc,
+		hHeap,
+		HEAP_ZERO_MEMORY,
+		BLOCK_SIZE
+	.IF eax==NULL
+		stc		;返回时CF=1
+	.ELSE
+		mov pData,eax		;保存指针
+		clc					;返回时CF=0
+	.ENDIF
+	ret
 allocate_block ENDP
 free_block PROC USES ecx
-INVOKE HeapFree, hHeap, 0, pData
-ret
+	INVOKE HeapFree, 
+	hHeap, 
+	0, 
+	pData
+	ret
 free_block ENDP
 END main
 ```
@@ -2109,27 +2065,22 @@ END main
 # 11.4 IA-32内存管理
 
 在Windows 3.0首次发布的时候，从实模式转换到保护模式是程序员们很感兴趣的事情（在Windows 2.x下面写过程序的人都会记得实模式下的640KB内存限制是一件多么麻烦的事情）。随着Windows保护模式（接下来是虚拟内存模式）的到来，全新的可能性出现了，Intel386处理器（IA-32系列处理器里面的第一种）使这一切成为可能。在操作系统方面，我们现在看到的是，从不稳定的Windows3.0到今天流行的、久经考验（并且稳定）的Windows及Linux操作系统经过了十多年的逐步演变。
-本节的内容主要集中在内存管理的两个主要方面：
+==本节的内容主要集中在内存管理的两个主要方面：==
 
-- ·从逻辑地址到线性地址的转换。
-- ·从线性地址到物理地址的转换（分页）。
+- ==从逻辑地址到线性地址的转换。==
+- ==从线性地址到物理地址的转换（分页）。==
 
-本节的内容主要集中在内存管理的两个主要方面：
+让我们简要回顾一下在第2章中介绍的关于==IA-32内存管理的几个术语==，它们是：
 
-- ·从逻辑地址到线性地址的转换。
-- ·从线性地址到物理地址的转换（分页）。
-
-让我们简要回顾一下在第2章中介绍的关于IA-32内存管理的几个术语，它们是：
-
-- ·多任务——允许同时运行多个程序（或任务）。处理器把时间分片划分并分配给每个运行中的程序。
-- ·段——是一块供程序存放代码或者数据的长度不定的内存。
-- ·分段——把多个内存段互相隔离的方法，这使多个程序可以互相隔离地运行而不会干扰。
-- ·段描述符——是用来描述一个内存段的64位值，其中包含了段的基地址、访问权限、长度限制、段的类型和使用方式等信息。
+- ==多任务——允许同时运行多个程序（或任务）。处理器把时间分片划分并分配给每个运行中的程序。==
+- ==段——是一块供程序存放代码或者数据的长度不定的内存。==
+- ==分段——把多个内存段互相隔离的方法，这使多个程序可以互相隔离地运行而不会干扰。==
+- ==段描述符——是用来描述一个内存段的64位值，其中包含了段的基地址、访问权限、长度限制、段的类型和使用方式等信息。==
 
 现在加入两个新的概念：
 
-- ·段选择子—存放在段寄存器（CS,DS,SS,ES,FS和GS)里面的16位值。
-- ·逻辑地址——个段选择子和一个32位的偏移地址的组合。
+- ==段选择子—存放在段寄存器(CS,DS,SS,ES,FS和GS)里面的16位值。==
+- ==逻辑地址——个段选择子和一个32位的偏移地址的组合==。
 
 本书几乎所有的内容都忽略了段寄存器而只用到了32位的数据偏移地址，因为用户程序从不直接修改段寄存器。不过，从系统程序员的视角来看，段寄存器是很重要的，因为它间接地和内存中的段相关。
 
@@ -2143,12 +2094,12 @@ END main
 
 ### 线性地址：
 
-线性地址是一个介于0到FFFFFFFFh的32位整数，它代表内存中的一个位置。如果分页机制没有打开的话，那么线性地址实际上就是数据的物理地址。
+==线性地址是一个介于0到FFFFFFFFh的32位整数，它代表内存中的一个位置。如果分页机制没有打开的话，那么线性地址实际上就是数据的物理地址。==
 
 ### 分页
 
-分页机制是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装人的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。程序要用到的内存被划分成称为页的小块，通常每块的大小为4KB。运行每个程序的时候，处理器有选择地在内存中释放一些不用的页面，然后装入其他马上要被用到的页面
-操作系统使用一个页目录和一系列的页表来追踪内存中所有程序的页面使用情况。当一个程序尝试访问线性地址空间中的某个地址的时候，处理器自动把线性地址转换成物理地址，这个转换就称为页面转换。如果需要的页面尚未在内存中，处理器打断程序的执行并引发一个页错误，操作系统捕获这个错误并在程序恢复运行前把所需的页面从磁盘复制到内存中。从应用程序的角度来看，页错误和页面转换是自动发生的。
+==分页机制是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装人的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。程序要用到的内存被划分成称为页的小块，通常每块的大小为4KB。运行每个程序的时候，处理器有选择地在内存中释放一些不用的页面，然后装入其他马上要被用到的页面==
+==操作系统使用一个页目录和一系列的页表来追踪内存中所有程序的页面使用情况。当一个程序尝试访问线性地址空间中的某个地址的时候，处理器自动把线性地址转换成物理地址，这个转换就称为页面转换。==如果需要的页面尚未在内存中，处理器打断程序的执行并引发一个页错误，操作系统捕获这个错误并在程序恢复运行前把所需的页面从磁盘复制到内存中。从应用程序的角度来看，页错误和页面转换是自动发生的。
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6i63zh0ppzk0.webp)
 
@@ -2158,79 +2109,77 @@ END main
 
 ### 描述符表
 
-段描述符存在于两种类型的表中：全局描述符表（GDT)和局部描述符表（LDT)。
+==段描述符存在于两种类型的表中：全局描述符表（GDT)和局部描述符表（LDT)。==
 
 #### 全局描述符表（GDT,Global Descriptor Table):
 
-系统中只存在一个全局描述符表，系统在处理器切换到保护模式时创建全局描述符表，表的基址存放在GDTR(全局描述符表寄存器）里面表中的项目（称为段描述符）指向各个段。操作系统可以把所有程序都要使用的段存放在GDT中
+==系统中只存在一个全局描述符表，系统在处理器切换到保护模式时创建全局描述符表，表的基址存放在GDTR(全局描述符表寄存器）里面表中的项目（称为段描述符）指向各个段。==操作系统可以把所有程序都要使用的段存放在GDT中
 
 #### 局部描述符表（LDT,Local Descriptor Tables):
 
-在一个多任务的操作系统中，每个程序或任务都有它自己的段描述符表，这个表称为局部描述符表（LDT)。当前程序的LDT的基址存放在LDTR(局部描述符表寄存器）中。每个段描述符都包含了段在线性地址空间中的基址。如图11.8所示，一个段和其他段通常是不同的。图中显示了三个不同的逻辑地址，每个地址分别对应于LDT中的不同表项。在这个例子中，我们假设分页机制是关闭的，所以线性地址空间也就是物理地址空间。
+==在一个多任务的操作系统中，每个程序或任务都有它自己的段描述符表，这个表称为局部描述符表（LDT)。当前程序的LDT的基址存放在LDTR(局部描述符表寄存器）中。每个段描述符都包含了段在线性地址空间中的基址。==如图11.8所示，一个段和其他段通常是不同的。图中显示了三个不同的逻辑地址，每个地址分别对应于LDT中的不同表项。在这个例子中，我们假设分页机制是关闭的，所以线性地址空间也就是物理地址空间。
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.zbvjdlbccw0.webp)
 
 ### 段描述符的细节
 
-段描述符中除了包含段的基址以外，有些数据位定义了段的限长和段类型。代码段是一个只读段的例子，如果一个程序尝试去修改代码段的内容，那么处理器会产生一个页异常。段描述符中也包含保护级别，这样可以防止应用程序访问操作系统使用的数据。下面是段描述符中各个域的含义。
+==段描述符中除了包含段的基址以外，有些数据位定义了段的限长和段类型==。代码段是一个只读段的例子，如果一个程序尝试去修改代码段的内容，那么处理器会产生一个页异常。段描述符中也包含保护级别，这样可以防止应用程序访问操作系统使用的数据。下面是段描述符中各个域的含义。
 
-#### 基地址：
+#### 基地址
 
-是一个32位的整数，定义了段在4GB的线性地址空间中的起始地址。
+==是一个32位的整数，定义了段在4GB的线性地址空间中的起始地址。==
 
-#### 特权级：
+#### 特权级
 
-每个段都有一个0~3级之间的权限等级，其中0级是最高级，通常被操作系统的核心代码所使用。如果一个低优先级（优先级数字大）的程序尝试去存取高优先级（优先级数字小）的段，那么处理器会产生一个异常。
+==每个段都有一个0~3级之间的权限等级，其中0级是最高级，通常被操作系统的核心代码所使用。如果一个低优先级（优先级数字大）的程序尝试去存取高优先级（优先级数字小）的段，那么处理器会产生一个异常。==
 
-#### 段类型：
+#### 段类型
 
-用来指明段的类型以及可以对这个段进行的访问方式，还有段的扩展方向（向上或向下）。数据段（包括堆栈段）可以是只读或者是可读写的，可以向上或向下扩展。代码段可以仅仅是可执行的或者是可执行/可读的。
+==用来指明段的类型以及可以对这个段进行的访问方式，还有段的扩展方向（向上或向下）。数据段（包括堆栈段）可以是只读或者是可读写的，可以向上或向下扩展。代码段可以仅仅是可执行的或者是可执行/可读的。==
 
-#### 段存在标志：
+#### 段存在标志
 
-这个数据位指明段当前是否在物理内存中存在。
+==这个数据位指明段当前是否在物理内存中存在。==
 
-#### 粒度标志：
+#### 粒度标志
 
-用来决定如何解释段限长域的数值，如果标志位清零，那么段限长的单位是字节如果该标志位置位，那么段限长的单位是4096字节。
+==用来决定如何解释段限长域的数值，如果标志位清零，那么段限长的单位是字节如果该标志位置位，那么段限长的单位是4096字节。==
 
-#### 段限长：
+#### 段限长
 
-是一个20位的整数，表示段的长度，它根据粒度标志的值按下面的两种方式解释：
+==是一个20位的整数，表示段的长度，它根据粒度标志的值按下面的两种方式解释：==
 
-- ·1字节到1MB字节的段长度。
-- ·4096字节到4GB字节的段长度。
+- ==1字节到1MB字节的段长度。==
+- ==4096字节到4GB字节的段长度。==
 
-## 11.4.2页面地址转换
+## 11.4.2 页面地址转换
 
-当分页机制被允许的时候，处理器必须把32位的线性地址转换到32位的物理地址，在这个过程中要用到以下三个数据结构：
+==当分页机制被允许的时候，处理器必须把32位的线性地址转换到32位的物理地址==，在这个过程中要用到以下三个数据结构：
 
-- 页目录：一个最多包含1024个32位表项的页表地址表。
-- 页表：一个最多包含1024个32位表项的页地址表。
-- 页：一个4KB或者4MB的地址空间。
+- ==页目录：一个最多包含1024个32位表项的页表地址表。==
+- ==页表：一个最多包含1024个32位表项的页地址表。==
+- ==页：一个4KB或者4MB的地址空间==。
 
 为了简单起见，在接下来的讨论中假设使用4KB的页。
-一个线性地址可以被划分为三个部分：指向页目录的指针、指向页表的指针和在页中的偏移地址。页目录的起始地址存放在控制寄存器（CR3)中。如图11.9所示，当线性地址被转换到物理地址的时候，处理器执行了以下的步骤。
+==一个线性地址可以被划分为三个部分：指向页目录的指针、指向页表的指针和在页中的偏移地址。==页目录的起始地址存放在控制寄存器（CR3)中。如图11.9所示，当线性地址被转换到物理地址的时候，处理器执行了以下的步骤。
 
 ![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.576ef8n0lis0.webp)
 
-1.线性地址代表线性地址空间中的一个位置。
-2.以线性地址中10位的页目录域作为索引，从页目录表中得到页表入口项，页表入口项中包含了页表的基址。
-
-3.以线性地址中10位的页表域作为索引，从页表人口项指定的表项中得到页在物理内存中的基址。
-4.线性地址中12位的偏移地址域加上页的基址，就得到了操作数确切的物理地址。操作系统可以选择让所有的程序或任务使用同一个页目录，或者让每个任务使用单独的页目录，也可以混合使用两种方式。
+1. ==线性地址代表线性地址空间中的一个位置。==
+2. ==以线性地址中10位的页目录域作为索引，从页目录表中得到页表入口项，页表入口项中包含了页表的基址==。
+3. ==以线性地址中10位的页表域作为索引，从页表人口项指定的表项中得到页在物理内存中的基址。==
+4. ==线性地址中12位的偏移地址域加上页的基址，就得到了操作数确切的物理地址。操作系统可以选择让所有的程序或任务使用同一个页目录，或者让每个任务使用单独的页目录，也可以混合使用两种方式。==
 
 ### MS-Windows的虚拟机管理器
 
 现在我们已经有了IA-32处理器如何管理内存的总体概念了，Windows又是如何管理内存的呢？这也应该是个令人感兴趣的问题。下面的小段摘自 Microsoft Platform SDK文档。
-虚拟机管理器（VMM,Virtual Machine Manager)是位于MS-Windows核心的32位保护模式操作系统，它的主要职责是创建、运行、监控和终止虚拟机。虚拟机提供了内存管理、进程、中断和异常等服务，它和虚拟设备（32位的保护模式模块）协同工作，使虚拟设备能够以截取中断和异常的方式来控制应用程序对硬件和所安装软件的操作。不管是VMM还是虚拟设备，都运行在特权级0下的同一个32位平坦模式的地址空间中，系统在全局描述符中创建了两个入口（段描述符）,一个给代码段，另一个给数据段。两个段的基址都是从线性地址0开始的，并且永远不会被改变。VMM支持多线程和抢先式的多任务机制，它在多个虚拟机之间共享CPU时间，这样在这些虚拟机之中运行的应用程序就能够同时运行。
-在上面一段话中，我们可以把虚拟机解释为Intel称之为“进程”或者“任务”的东西，它由程序代码、支持软件、内存和寄存器等组成。每个虚拟机都有属于它自己的地址空间、I/O地址空间、中断向量表和局部描述符表。在虚拟8086模式下运行的应用程序在特权级3下运行。在MS-Windows中，保护模式程序可以在特权级级0和特权级3下面运行（特权级1和2在Windows下未使用）。
+虚拟机管理器(VMM,Virtual Machine Manager)是位于MS-Windows核心的32位保护模式操作系统，它的主要职责是创建、运行、监控和终止虚拟机。虚拟机提供了内存管理、进程、中断和异常等服务，它和虚拟设备（32位的保护模式模块）协同工作，使虚拟设备能够以截取中断和异常的方式来控制应用程序对硬件和所安装软件的操作。不管是VMM还是虚拟设备，都运行在特权级0下的同一个32位平坦模式的地址空间中，系统在全局描述符中创建了两个入口（段描述符）,一个给代码段，另一个给数据段。两个段的基址都是从线性地址0开始的，并且永远不会被改变。VMM支持多线程和抢先式的多任务机制，它在多个虚拟机之间共享CPU时间，这样在这些虚拟机之中运行的应用程序就能够同时运行。
+在上面一段话中，==我们可以把虚拟机解释为Intel称之为“进程”或者“任务”的东西，它由程序代码、支持软件、内存和寄存器等组成。每个虚拟机都有属于它自己的地址空间、I/O地址空间、中断向量表和局部描述符表。在虚拟8086模式下运行的应用程序在特权级3下运行。在MS-Windows中，保护模式程序可以在特权级级0和特权级3下面运行==（特权级1和2在Windows下未使用）。
 
 # 11.5 本章小结
 
 从表面看，32位的控制台程序和16位的MS-DOS应用程序在外观和行为上都是很相似的，它们都使用标准的输入输出设备，都支持命令行的重定向操作，也都可以输出彩色的文本。但实质上，32位控制台程序和MS-DOS程序却是完全不同的，前者在保护模式下运行，而后者在实模式下运行。另外，它们使用的也是完全不同的函数库，Win32控制台程序使用的就是Windows图形界面程序使用的那些库文件，而MS-DOS程序被限制于使用BIOS和MS-DOS中断，这些中断在IBM-PC的那个年代就已经在使用了。
-在Win32API中可以使用两种字符集：8位的ASCH/ANSI字符集和16位的宽字符/Unicode
-字符集。
+==在Win32API中可以使用两种字符集：8位的ASCH/ANSI字符集和16位的宽字符/Unicode字符集。==
 写汇编程序的时候，API函数中使用的标准Windows数据类型必须先转换成MASM数据类
 型（参见表11.1)。
 控制台句柄是一个用于控制台输入输出的32位整数。GetStdHandle函数用来得到控制台句柄高级的控制台输入使用ReadConsole函数，高级的控制台输出使用WriteConsole函数。我们使用CreateFile函数来创建或者打开一个文件，用ReadFile函数读取文件，用WriteFile函数写文件，并且使用CloseHandle函数来关闭文件。如果要移动文件读写指针，可以使用SetFilePointer函数
@@ -2239,16 +2188,16 @@ GetLocalTime函数可以用来获取系统时间，SetLocalTime用来设置系�
 当要创建一个图形界面的Windows应用程序的时候，我们需要填写包含主窗口的窗口类信息的WNDCLASS结构，还必须创建一个WinMain过程来获取当前程序的句柄，并加载图标和鼠标光标，然后注册窗口类，创建主窗口，接下来显示并更新主窗口，最后，我们开始一个消息循环来接收并分派消息。
 
 WinProc过程负责接收并处理输入的窗口消息，这些消息通常由按动鼠标或按下键盘等用户动作而激发。本章中的例子程序处理WM_LBUTTONDOWN消息、WM_CREATE消息和WM_CLOSE消息，当检测到这些消息的时候，程序会显示一个消息框。
-动态内存分配，也称为堆（内存）分配（Heap Allocation),是程序用于保留和释放内存的有用工具。汇编语言可通过多种方式进行动态内存分配：第一种方式是通过系统调用让操作系统为其分配内存块；第二种方式是实现自己的堆管理器以处理小对象的内存分配请求。下面是一些用于动态内存分配的最重要的Win32API调用：
+动态内存分配，也称为堆（内存）分配（Heap Allocation),是程序用于保留和释放内存的有用工具。==汇编语言可通过多种方式进行动态内存分配：第一种方式是通过系统调用让操作系统为其分配内存块；第二种方式是实现自己的堆管理器以处理小对象的内存分配请求。==下面是一些用于动态内存分配的最重要的Win32API调用：
 
-- ·GetProcessHeap返回程序默认堆的句柄，该句柄是一个32位整数值。
-- ·HeapAlloc从堆中分配一块内存。
-- ·HeapCreate创建一个新的堆。
-- ·HeapDestroy销毁一个堆。
-- ·HeapFree释放以前从堆中分配的内存块。
-- ·HeapReAlloc调整堆中内存块的大小，必要时重新进行分配。
-- ·HeapSize返回以前分配的内存块的大小。
+- GetProcessHeap返回程序默认堆的句柄，该句柄是一个32位整数值。
+- HeapAlloc从堆中分配一块内存。
+- HeapCreate创建一个新的堆。
+- HeapDestroy销毁一个堆。
+- HeapFree释放以前从堆中分配的内存块。
+- HeapReAlloc调整堆中内存块的大小，必要时重新进行分配。
+- HeapSize返回以前分配的内存块的大小。
 
-本章的内存管理一节集中讨论两个主题：逻辑地址到线性地址的转换和线性地址到物理地址的转换。
-逻辑地址中的选择子部分指向段描述符表中的一个表项，这个表项指向线性内存中的一个段。段描述符中包含了这个段的相关信息，如界限、访问类型等。系统中有两种描述符表：一个全局描述符表（GDT)和一个或多个局部描述符表（LDT)。
-分页是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装入的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。处理器使用页目录、页表和页得到一个数据的物理地址。一个页目录表包含了指向各个页表的指针，而一个页表包含了指向多个页的指针。
+本章的内存管理一节集中讨论两个主题：==逻辑地址到线性地址的转换和线性地址到物理地址的转换。==
+==逻辑地址中的选择子部分指向段描述符表中的一个表项，这个表项指向线性内存中的一个段。段描述符中包含了这个段的相关信息，如界限、访问类型等。系统中有两种描述符表：一个全局描述符表（GDT)和一个或多个局部描述符表（LDT)。==
+==分页是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装入的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。处理器使用页目录、页表和页得到一个数据的物理地址。一个页目录表包含了指向各个页表的指针，而一个页表包含了指向多个页的指针。==
