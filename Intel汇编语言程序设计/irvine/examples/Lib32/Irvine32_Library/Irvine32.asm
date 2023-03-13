@@ -2,7 +2,7 @@ Title Irvine32 Link Library Source Code         (Irvine32.asm)
 
 Comment @
 To view this file with proper indentation, set your 
-	editor's tab stops to columns 5, 11, 35, and 40.
+	editors tab stops to columns 5, 11, 35, and 40.
 
 Recent Updates:
 06/04/05: WaitMsg simplified
@@ -73,7 +73,7 @@ Str_compare	Chapter 9
 Str_copy		Chapter 9
 Str_length	Chapter 9
 Str_trim		Chapter 9
-Str_ucase		Chapter 9
+Str_ucase	Chapter 9
 WaitMsg
 WriteBin
 WriteBinB
@@ -82,7 +82,7 @@ WriteDec
 WriteHex
 WriteHexB
 WriteInt
-WriteStackFrame	Chapter 8  (James Brink)
+WriteStackFrame		Chapter 8  (James Brink)
 WriteStackFrameName	Chapter 8  (James Brink)
 WriteString
 WriteToFile
@@ -105,32 +105,46 @@ INCLUDE Macros.inc	; macro definitions
 ;*************************************************************
 
 ;---------------------------------------------------------------------
+;显示单个CPU标志位值
 ShowFlag MACRO flagName,shiftCount
 	     LOCAL flagStr, flagVal, L1
 ;
 ; Helper macro.
-; Display a single CPU flag value
+; Display a single CPU flag value 	
 ; Directly accesses the eflags variable in Irvine16.asm/Irvine32.asm
+; 辅助宏
+; 显示单个cpu标志值
+; 直接访问irvine 16 asm irvine 32 asm中的eflags变量
 ; (This macro cannot be placed in Macros.inc)
 ;---------------------------------------------------------------------
 
 .data
-flagStr DB "  &flagName="
-flagVal DB ?,0
+	;常理定义
+	flagStr DB "  &flagName="
+	;结尾标识
+	flagVal DB ?,0
 
 .code
+	;保护寄存器
 	push eax
 	push edx
 
+	;32位寄存器放入到eax中
 	mov  eax,eflags	; retrieve the flags
+	; 将1标识放入到flagVal中
 	mov  flagVal,'1'
+	; 右移参数位
 	shr  eax,shiftCount	; shift into carry flag
+	; 将目标位挪到到cf中，判断cf中的值是否为1
 	jc   L1
+	;为1，跳转
+	;不为1，将0标识挪到cf中
 	mov  flagVal,'0'
 L1:
+	; 输出标识结果
 	mov  edx,OFFSET flagStr	; display flag name and value
 	call WriteString
-
+	; 弹出寄存器
 	pop  edx
 	pop  eax
 ENDM
@@ -141,10 +155,17 @@ CheckInit MACRO
 ; Helper macro
 ; Check to see if the console handles have been initialized
 ; If not, initialize them now.
+; 辅助宏
+; 检查控制台句柄是否已经初始化
+; 如果现在没有初始化它们
 ;-------------------------------------------------------------
-LOCAL exit
+LOCAL exit 	;本地标识声明
+	; initFlag=0
+	; 判断有没有初始化,initFlag=1说明已经初始化，initflag=0说明没有初始化
 	cmp InitFlag,0
+	; 已经初始化，退出
 	jne exit
+	; 没有初始化，进行初始化
 	call Initialize
 exit:
 ENDM
@@ -160,9 +181,13 @@ InitFlag DB 0	; initialization flag
 xtable BYTE "0123456789ABCDEF"
 
 .data?		; uninitialized data
+; 定义控制台输入设备的句柄
 consoleInHandle  DWORD ?     	; handle to console input device
+; 定义控制台输出设备的句柄
 consoleOutHandle DWORD ?     	; handle to standard output device
+; 写入的字节数
 bytesWritten     DWORD ?     	; number of bytes written
+; 标志符拷贝
 eflags  DWORD ?
 digitBuffer BYTE MAX_DIGITS DUP(?),?
 
@@ -185,9 +210,12 @@ CloseFile PROC
 ; Receives: EAX = file handle 
 ; Returns: EAX = nonzero if the file is successfully 
 ;   closed.
+; 使用句柄作为标识符关闭文件
+; 接收 eax 文件句柄
+; 如果文件成功关闭则返回 eax 非零值
 ; Last update: 6/8/2005
 ;--------------------------------------------------------
-
+	;调用closehanlde过程
 	INVOKE CloseHandle, eax
 	ret
 CloseFile ENDP
@@ -195,11 +223,15 @@ CloseFile ENDP
 
 ;-------------------------------------------------------------
 Clrscr PROC
+	; 本地变量，bufInfo,控制台屏幕缓冲信息结构体类型
 	LOCAL bufInfo:CONSOLE_SCREEN_BUFFER_INFO
 ;
 ; Clear the screen by writing blanks to all positions
 ; Receives: nothing
 ; Returns: nothing
+; 通过向所有位置写入空白来清除屏幕
+; 什么都不接收
+; 什么也不返回
 ; Last update: 10/15/02
 ;
 ; The original version of this procedure incorrectly assumed  the
@@ -207,60 +239,83 @@ Clrscr PROC
 ; This new version writes both blanks and attribute values to each 
 ; buffer position. Restriction: Only the first 512 columns of each 
 ; line are cleared. The name capitalization was changed to "Clrscr".
+; 此过程的原始版本错误地假定
+; 控制台窗口尺寸为 80 x 25 默认的 ms dos 屏幕
+; 此新版本将空白和属性值写入每个
+; 缓冲区位置限制仅在第一个每行 512 列被清除，名称大写更改为 clrscr
 ;-------------------------------------------------------------
-
+; 最大行数
 MAX_COLS = 512
 .data
+; 清屏空格，每行最大列数，全部初始化为空格
 blanks BYTE MAX_COLS DUP(' ')			; one screen line
+; 输出属性，长度和blanks相同
 attribs WORD MAX_COLS DUP(0)
+; 缓冲区大小
 lineLength DWORD 0
-
+; 输出首字符地址
 cursorLoc COORD <0,0>
+; 实际输出字符数量
 count DWORD ?
 
 .code
 	pushad
 	CheckInit
 
-	; Get the console buffer size and attributes
+	; Get the console buffer size and attribute
+	; 获取控制台缓冲区大小和属性
 	INVOKE GetConsoleScreenBufferInfo, consoleOutHandle, ADDR bufInfo
+	; 控制台的宽度
 	mov ax,bufInfo.dwSize.X;
+	; 放到变量中
 	mov WORD PTR lineLength,ax
+	; 超过最大宽度，默认为最大宽度
 	.IF lineLength > MAX_COLS
 	  mov lineLength,MAX_COLS
 	.ENDIF
 
 	; Fill the attribs array
+	; 获取输出字符的属性
 	mov ax,bufInfo.wAttributes
+	; 最大行数
 	mov ecx,lineLength
 	mov edi,OFFSET attribs
+	; 将属性填充到属性列表中
 	rep stosw
-
+	; 有多少行，循环次数
 	movzx ecx,bufInfo.dwSize.Y		; loop counter: number of lines
-L1:	push ecx
+L1:	
+	; 保护ecx
+	push ecx
 
 	; Write a blank line to the screen buffer
+	; 向屏幕缓冲区写入一个空行
 	INVOKE WriteConsoleOutputCharacter,
-	consoleOutHandle,
-	ADDR blanks,		; pointer to buffer
-	lineLength,		; number of blanks to write
-	cursorLoc,		; first cell coordinates
-	ADDR count		; output count
+	consoleOutHandle,	; 控制台句柄
+	ADDR blanks,		; 输出首字符地址
+	lineLength,		; 缓冲区的大小
+	cursorLoc,		; 首字符地址
+	ADDR count		; 实际输出字符的数量
 
 	; Fill all buffer positions with the current attribute
+	; 用当前属性填充所有缓冲区位置
 	INVOKE WriteConsoleOutputAttribute,
-	  consoleOutHandle,
-	  ADDR attribs,		; point to attribute array
-	  lineLength,		; number of attributes to write
-	  cursorLoc,		; first cell coordinates
-	  ADDR count		; output count
-
+	  consoleOutHandle,	; 输出控制台句柄
+	  ADDR attribs,		; 输出首字符地址
+	  lineLength,		; 缓冲区的大小
+	  cursorLoc,		; 首字符地址
+	  ADDR count		; 实际输出属性的数量
+	; 首字符地址+1，为下一次循环做准备
 	add cursorLoc.Y, 1		; point to the next buffer line
+	; 弹出ecx
 	pop ecx
+	; ecx-1循环
 	Loop L1
 
 	; Move cursor to 0,0
+	; 还原
 	mov cursorLoc.Y,0
+	; 设置光标的X和Y坐标位置
 	INVOKE SetConsoleCursorPosition, consoleOutHandle, cursorLoc
 
 	popad
@@ -276,6 +331,10 @@ CreateOutputFile PROC
 ; Returns: If the file was created successfully, EAX 
 ;   contains a valid file handle. Otherwise, EAX  
 ;   equals INVALID_HANDLE_VALUE.
+; 创建一个输出模式并打开的文件
+; 参数：edx，文件名地址
+; 返回		成功：eax中保存文件的句柄
+; 			失败：eax = INVALID_HANDLE_VALUE
 ;------------------------------------------------------
 	INVOKE CreateFile,
 	  edx, GENERIC_WRITE, DO_NOT_SHARE, NULL,
@@ -286,11 +345,13 @@ CreateOutputFile ENDP
 
 ;-----------------------------------------------------
 Crlf PROC
-;
+; 输出换行
 ; Writes a carriage return / linefeed
 ; sequence (0Dh,0Ah) to standard output.
 ;-----------------------------------------------------
+	; 判断有没有初始化
 	CheckInit
+	; 输出换行
 	mWrite <0dh,0ah>	; invoke a macro
 	ret
 Crlf ENDP
@@ -300,6 +361,7 @@ Crlf ENDP
 Delay PROC
 ;
 ; THIS FUNCTION IS NOT IN THE IRVINE16 LIBRARY
+; 延迟暂停当前进程给定的毫秒数
 ; Delay (pause) the current process for a given number
 ; of milliseconds.
 ; Receives: EAX = number of milliseconds
@@ -308,6 +370,7 @@ Delay PROC
 ;------------------------------------------------------
 
 	pushad
+	; 执行sleep过程
 	INVOKE Sleep,eax
 	popad
 	ret
@@ -426,7 +489,7 @@ saveIP  DWORD ?												;保存返回地址偏移
 saveESP DWORD ?												;保存栈顶
 .code
 	pop saveIP			; 										将返回地址的偏移存起来
-	mov saveESP,esp	; save ESP's value at entry	将原栈的栈顶保存起来
+	mov saveESP,esp	; save ESPs value at entry	将原栈的栈顶保存起来
 	push saveIP			; replace it on stack 			再将原返回地址入栈
 	push eax				; save EAX (restore on exit)	保护eax
 
@@ -733,6 +796,7 @@ Gotoxy ENDP
 
 
 ;----------------------------------------------------
+; 初始化过程，私有过程，只有当前文件可以调用
 Initialize PROC private
 ;
 ; Get the standard console handles for input and output,
@@ -740,11 +804,14 @@ Initialize PROC private
 ; Updated 03/17/2003
 ;----------------------------------------------------
 	pushad
-
+	; 获取标准输入句柄
 	INVOKE GetStdHandle, STD_INPUT_HANDLE
+	; 将获取的句柄放入到变量中
 	mov [consoleInHandle],eax
 
+	; 获取标准输出句柄
 	INVOKE GetStdHandle, STD_OUTPUT_HANDLE
+	; 将获取的句柄放入到变量中
 	mov [consoleOutHandle],eax
 
 	mov InitFlag,1
@@ -2461,19 +2528,19 @@ WriteStackFrame ENDP
 
 ;--------------------------------------------------------
 WriteString PROC
-;
+; 标志输出，参数edx字符串首地址
 ; Writes a null-terminated string to standard
 ; output. Input parameter: EDX points to the
 ; string.
 ; Last update: 9/7/01
 ;--------------------------------------------------------
-	pushad
+	pushad	;保护全部通用寄存器
 
 	CheckInit
-
+	; 计算字符串长度，结果放到eax中
 	INVOKE Str_length,edx   	; return length of string in EAX
 	cld	; must do this before WriteConsole
-
+	; 控制台输出
 	INVOKE WriteConsole,
 	    consoleOutHandle,     	; console output handle
 	    edx,	; points to string

@@ -22,8 +22,11 @@ TAB = 9		; ASCII code for Horiz Tab
 HANDLE TEXTEQU <DWORD>		; used in Win32 API documentation
 
 ; Win32 Console handles
+; 标志输入句柄定义
 STD_INPUT_HANDLE EQU -10
+; 标志输出句柄定义
 STD_OUTPUT_HANDLE EQU -11		; predefined Win API constant
+; 标志错误句柄
 STD_ERROR_HANDLE EQU -12
 
 ;  Input Mode flags (used by GetConsoleMode & SetConsoleMode):
@@ -241,11 +244,17 @@ CONSOLE_CURSOR_INFO STRUCT
   bVisible DWORD ?
 CONSOLE_CURSOR_INFO ENDS
 
+; 控制台屏幕缓冲区信息结构体
 CONSOLE_SCREEN_BUFFER_INFO STRUCT
+	; 屏幕缓冲区的大小，它们是以字符数为单位进行度量的行数和列数
   dwSize                COORD <>
+  ; 光标的位置
   dwCursorPosition      COORD <>
+  ; 控制台窗口在屏幕缓冲区中的坐标
   wAttributes           WORD ?
+  ; 控制台窗口在屏幕缓冲区中的坐标
   srWindow              SMALL_RECT <>
+  ; 控制台窗口的最大可能尺寸
   dwMaximumWindowSize   COORD <>
 CONSOLE_SCREEN_BUFFER_INFO ENDS
 
@@ -366,8 +375,9 @@ GetNumberOfConsoleInputEvents PROTO,	; get number of unread records
 	hConsoleInput:HANDLE,		; input handle
 	lpCount:PTR DWORD		; pointer to counter
 
+; 获取标准句柄
 GetStdHandle PROTO,               	; get standard handle
-	nStdHandle:HANDLE  		; type of console handle
+	nStdHandle:HANDLE  		; type of console handle 控制台句柄类型
 
 GetSystemTime PROTO,		; returns the system time
 	lpSystemTime:PTR SYSTEMTIME		; ptr to SYSTEMTIME object
@@ -491,20 +501,20 @@ WriteConsole PROTO,		; write a buffer to the console
 	nNumberOfCharsToWrite:DWORD,		; size of buffer
 	lpNumberOfCharsWritten:PTR DWORD,		; ptr to number of bytes written
 	lpReserved:DWORD		; (not used)
-
+; 将一定数量的字符复制到屏幕缓冲区从指定位置开始的连续空间中
 WriteConsoleOutputCharacter PROTO,
-	hConsoleOutput:HANDLE,		; console output handle
-	lpCharacter:PTR BYTE,		; pointer to buffer
-	nLength:DWORD,		; size of buffer
-	dwWriteCoord:COORD,		; first cell coordinates
-	lpNumberOfCharsWritten:PTR DWORD	; output count
+	hConsoleOutput:HANDLE,		; 控制台输出句柄
+	lpCharacter:PTR BYTE,		; 字符缓冲区的地址
+	nLength:DWORD,		; 缓冲区的大小
+	dwWriteCoord:COORD,		; 首字符的坐标
+	lpNumberOfCharsWritten:PTR DWORD	; 实际输出字符的数量
 
 WriteConsoleOutputAttribute PROTO,
-	hConsoleOutput:HANDLE,		; output handle
-	lpAttribute:PTR WORD,		; write attributes
-	nLength:DWORD,		; number of cells
-	dwWriteCoord:COORD,		; first cell coordinates
-	lpNumberOfAttrsWritten:PTR DWORD	; number of cells written
+	hConsoleOutput:HANDLE,		; 控制台输出句柄
+	lpAttribute:PTR WORD,		; 属性缓冲区的地址
+	nLength:DWORD,		; 缓冲区的大小
+	dwWriteCoord:COORD,		; 首字符的坐标
+	lpNumberOfAttrsWritten:PTR DWORD	; 实际输出属性的数量
 
 WriteFile PROTO,		; write buffer to output file
 	hFile:HANDLE,		; output handle

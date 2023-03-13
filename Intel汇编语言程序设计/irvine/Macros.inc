@@ -43,7 +43,7 @@ mWriteSpace MACRO count
 	-- <count> is optional
 
 mWriteString MACRO buffer:REQ
-	-- Writes a string variable's contents to the console window.
+	-- Writes a string variables contents to the console window.
 
 
 
@@ -141,7 +141,7 @@ mShow MACRO itsName:REQ, format:=<HIN>
 ;
 ; The default format is "HIN"
 ;
-; The variable or register's value is displayed in each format,
+; The variable or registers value is displayed in each format,
 ; in the order specified by the caller, on a single output line.
 ; Create by Gerald Cahill and Kip Irvine.
 ;---------------------------------------------------
@@ -271,7 +271,7 @@ ENDM
 
 ;------------------------------------------------------
 mWrite MACRO text:REQ
-;
+; 将字符串文字写入标准输出，外围调用与<>配合使用
 ; Writes a string literal to standard output.
 ; Receives: a string enclosed in single or double 
 ;   quotes (null terminator not required).

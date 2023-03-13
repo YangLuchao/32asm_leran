@@ -528,7 +528,7 @@ SMALL_RECT ENDS
 
 ### WriteConsole函数
 
-WriteConsole函数在控制台窗口中的当前光标位置显示一个字符串并前进光标，支持标准的ASCII控制字符，如制表符、回车、换行符等。要显示的字符串不必以0结尾。函数原型如下：
+==WriteConsole函数在控制台窗口中的当前光标位置显示一个字符串并前进光标==，支持标准的ASCII控制字符，如制表符、回车、换行符等。要显示的字符串不必以0结尾。函数原型如下：
 
 ```assembly
 WriteConsole PROTO,
@@ -539,7 +539,7 @@ WriteConsole PROTO,
 	lpReserved:DWORD
 ```
 
-第一个参数hConsoleOutput是控制台输出的句柄；第二个参数IpBuffer是指向要显示的字符串的指针；第三个参数 nNumberOfCharsToWrite指定了要显示的字符串的长度；第四个参数IpNumberOfCharsWritten指向一个整数变量，函数通过该变量返回实际输出的字符数量；最后一个参数是保留未用的，在使用的时候把它设置为0。
+==第一个参数hConsoleOutput是控制台输出的句柄；第二个参数IpBuffer是指向要显示的字符串的指针；第三个参数 nNumberOfCharsToWrite指定了要显示的字符串的长度；第四个参数IpNumberOfCharsWritten指向一个整数变量，函数通过该变量返回实际输出的字符数量；最后一个参数是保留未用的，在使用的时候把它设置为0。==
 
 #### 例子程序：Console1
 
