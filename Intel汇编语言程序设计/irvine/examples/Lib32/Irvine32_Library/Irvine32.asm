@@ -194,6 +194,7 @@ digitBuffer BYTE MAX_DIGITS DUP(?),?
 buffer DB 512 DUP(?)
 bufferMax = ($ - buffer)
 bytesRead DD ?
+; 预定义的系统时间结构
 sysTime SYSTEMTIME <>	; system time structure
 
 
@@ -384,6 +385,8 @@ DumpMem PROC
 ;
 ; Writes a range of memory to standard output
 ; in hexadecimal.
+; 以十六进制将内存范围写入标准输出
+; 参数：esi=内存开始地址，ecx=个数，ebx=单位尺寸
 ; Receives: ESI = starting offset, ECX = number of units,
 ;           EBX = unit size (1=byte, 2=word, or 4=doubleword)
 ; Returns:  nothing
@@ -399,14 +402,21 @@ dashLine   DB "-------------------------------",13,10,0
 	pushad
 
 	mov  edx,OFFSET dumpPrompt
+	; 输出 Dump of offset
 	call WriteString
+	; 初始地址
 	mov  eax,esi	; get memory offset to dump
+	; 输出十六进制
 	call  WriteHex
+	; 换行
 	call	Crlf
+	; 分隔符
 	mov  edx,OFFSET dashLine
+	; 打印输出
 	call WriteString
-
+	; 初始化本地变量
 	mov  byteCount,0
+	; 设置输出单位
 	mov  unitsize,ebx
 	cmp  ebx,4	; select output size
 	je   L1
@@ -418,38 +428,38 @@ dashLine   DB "-------------------------------",13,10,0
 L1:
 	mov  eax,[esi]
 	call WriteHex
-	mWriteSpace 2
-	add  esi,ebx
+	mWriteSpace 2 	;输出2个空格
+	add  esi,ebx 	;指针移动
 	Loop L1
-	jmp  L4
+	jmp  L4 			;打印完成	
 
 	; 16-bit word output
 L2:
-	mov  ax,[esi]	; get a word from memory
-	ror  ax,8	; display high byte
-	call HexByte
-	ror  ax,8	; display low byte
-	call HexByte
-	mWriteSpace 1	; display 1 space
-	add  esi,unitsize	; point to next word
+	mov  ax,[esi]	; 拿到内存
+	ror  ax,8		; 将高8位挪到低8位，显示高八位
+	call HexByte	; 显示
+	ror  ax,8		; 再将高8位挪到低8位，还原
+	call HexByte	; 输出
+	mWriteSpace 1	; 输出1个空格
+	add  esi,unitsize	; 指针后移
 	Loop L2
-	jmp  L4
+	jmp  L4			; 打印完成
 
 	; 8-bit byte output, 16 bytes per line
 L3:
-	mov  al,[esi]
-	call HexByte
-	inc  byteCount
-	mWriteSpace 1
-	inc  esi
+	mov  al,[esi] 	; 拿到字节到
+	call HexByte 	; 输出
+	inc  byteCount ; 字节计数+1
+	mWriteSpace 1  ; 输出1个空格
+	inc  esi 		; 指针+1
 
 	; if( byteCount mod 16 == 0 ) call Crlf
 
-	mov  dx,0
+	mov  dx,0 			
 	mov  ax,byteCount
 	mov  bx,16
 	div  bx
-	cmp  dx,0
+	cmp  dx,0 			
 	jne  L3B
 	call	Crlf
 L3B:
@@ -521,6 +531,8 @@ saveESP DWORD ?												;保存栈顶
 ; Show the flags (using the eflags variable). The integer parameter indicates
 ; how many times EFLAGS must be shifted right to shift the selected flag 
 ; into the Carry flag.
+; 使用 eflags 变量显示标志，整数参数指示
+; 必须将 eflag 右移多少次才能将所选标志移入进位标志
 
 	ShowFlag CF,1
 	ShowFlag SF,8
@@ -562,6 +574,23 @@ GetCommandTail PROC
 ; Running from an IDE such as TextPad or JCreator:
 ; When the command line is blank, GetCommandLine returns the program 
 ; name followed by a space and a null for all versions of Windows.
+; 将程序命令行的尾部复制到缓冲区中
+; 剥离程序名称的第一个参数后
+; 接收: edx指向将接收数据129字节缓冲区
+; 返回: 如果没有命令尾则携带标志 1 否则 cf 0
+;
+; 调用 win api 函数获取命令行并扫描引用私有帮助程序命令行尾中的每个参数
+; 是后跟一个空格，除了最后一个参数后面只跟 null
+;
+; 实现说明
+;
+; 在控制台窗口中运行
+; 当命令行在 windows 95 98 下是空白的 get 命令行
+; 返回程序名后跟一个空格和一个空 windows 2000 xp
+; 返回程序名后只跟 null 空格被省略
+; <br/ >从诸如文本板或 j creator 之类的 IDE 运行
+; 当命令行为空时，获取命令行返回程序
+; 名称后跟空格和所有版本的 Windows 的空值
 ;
 ; Contributed by Gerald Cahill, 9/26/2002
 ; Modified by Kip Irvine, 6/13/2005.
@@ -569,17 +598,21 @@ GetCommandTail PROC
 
 QUOTE_MARK = 22h
 
-	pushad
+	pushad	;保护全部通用寄存器
+	; 获取命令行参数指针，保存到eax
 	INVOKE GetCommandLine   	; returns pointer in EAX
 
 ; Initialize first byte of user's buffer to null, in case the 
 ; buffer already contains text.
-
+; 如果缓冲区已经包含文本，则将用户缓冲区的第一个字节初始化为空
 	mov	BYTE PTR [edx],0
 
 ; Copy the command-line string to the array. Read past the program's 
 ; EXE filename (may include the path). This code will not work correctly 
 ; if the path contains an embedded space.
+; 将命令行字符串复制到通过程序读取的数组
+; exe 文件名可能包含路径此代码将无法正常工作
+; 如果路径包含嵌入式空格
 
 	mov	esi,eax
 L0:	mov	al,[esi]    	; strip off first argument
@@ -645,6 +678,10 @@ GetDateTime PROC,
 ; the address specified by the input parameter.
 ; Receives: pointer to a QWORD variable (inout parameter)
 ; Returns: nothing
+; 获取当前本地日期和时间，将其存储为 64 位整数 win 32 文件时间格式在内存中
+; 输入参数指定的地址
+; 接收 指向 qword 变量的指针 inout 参数
+; 什么都不返回
 ; Updated 10/20/2002
 ;--------------------------------------------------
 	pushad
@@ -2052,7 +2089,8 @@ WriteHex PROC
 ; Input parameters: EAX = the number to write.
 ; Shell interface for WriteHexB, to retain compatibility
 ; with the documentation in Chapter 5.
-;
+; 将无符号的 32 位十六进制数写入控制台窗口
+; 输入参数: eax = 要写入的数字
 ; Last update: 11/18/02
 ;------------------------------------------------------
 	push ebx

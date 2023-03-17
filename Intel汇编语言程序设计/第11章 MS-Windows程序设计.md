@@ -1343,7 +1343,7 @@ Sleep PROTO,
 
 Irvine32库中的GetDateTime过程返回了一个64位的整数，这个数值是自1601年1月1日开始的以100 ns为单位的计数值。这看起来有些奇怪，因为在那个时候人们还不知道计算机是什么，但是Microsoft却使用这个数值来跟踪文件的日期和时间。Win32 SDK文档中建议读者使用下面的步骤来准备系统日期和时间，以便进行其他的日期和时间计算：
 
-1. 调用一个函数（例如GetLocalTime)来填写SYSTEMTIME结构。
+1. 调用一个函数(例如GetLocalTime)来填写SYSTEMTIME结构。
 2. 用SystemTimeToFileTime函数把SYSTEMTIME结构转换到FILETIME结构。
 3. 把FILETIME结构中的结果复制到一个64位的QWORD中。
 

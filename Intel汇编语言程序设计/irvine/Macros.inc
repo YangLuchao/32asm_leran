@@ -251,21 +251,24 @@ LOCAL tempStr
 ;
 ; Displays a 32-bit register name and contents.
 ; Receives: the register name, the register value.
+; 显示一个 32 位寄存器名称和内容 
+; 接收: 寄存器名称 寄存器值
 ;---------------------------------------------------
 .data
-tempStr BYTE "  &regName=",0
+tempStr BYTE "  &regName=",0 	; &regName强制替换为输入的regName
 .code
-	push eax
+	; 保护寄存器
+	push eax 		
 
 ; Display the register name
 	push	edx
-	mov	edx,OFFSET tempStr
-	call	WriteString
-	pop	edx
+	mov	edx,OFFSET tempStr			; 地址准备
+	call	WriteString 			; 输出
+	pop	edx  						; 弹出edx
 
 ; Display the register contents
-	mov	eax,regValue
-	call	WriteHex
+	mov	eax,regValue 				; 目标寄存器中的值挪到eax中
+	call	WriteHex 				; 输出
 	pop	eax
 ENDM
 
@@ -304,14 +307,16 @@ mWriteSpace MACRO count:=<1>
 ; Writes one or more spaces to standard output.
 ; Receives: an integer specifying the number of spaces.
 ;   If count is blank, a single space is written.
+; 将一个或多个空格写入标准输出 接收一个指定空格数的整数 如果计数为空，则写入一个空格
 ;------------------------------------------------------
 LOCAL spaces
 .data
+; 空格常量
 spaces BYTE count DUP(' '),0
 .code
 	push	edx
-	mov	edx,OFFSET spaces
-	call	WriteString
+	mov	edx,OFFSET spaces	;地址
+	call	WriteString 		;输出
 	pop	edx
 ENDM
 

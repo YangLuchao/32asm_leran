@@ -208,21 +208,21 @@ wsprintf 		EQU <wsprintfA>
 ;=======================================================
 ; Standard Windows Structure defintions:
 ;=======================================================
-
+; 屏幕坐标结构体
 COORD STRUCT
-	X WORD ?
-	Y WORD ?
+	X WORD ? 				;X坐标
+	Y WORD ?				;Y坐标
 COORD ENDS
-
-SYSTEMTIME STRUCT
-	wYear WORD ?
-	wMonth WORD ?
-	wDayOfWeek WORD ?
-	wDay WORD ?
-	wHour WORD ?
-	wMinute WORD ?
-	wSecond WORD ?
-	wMilliseconds WORD ?
+; 系统时间结构体
+SYSTEMTIME STRUCT		
+	wYear WORD ?			;年（4位数）
+	wMonth WORD ?			;月（1~12)
+	wDayOfWeek WORD ?		;星期（0~6)
+	wDay WORD ?				;日（1~31)
+	wHour WORD ?			;小时（0~23)
+	wMinute WORD ?			;分钟（0~59)
+	wSecond WORD ?			;秒（0~59)
+	wMilliseconds WORD ?	;毫秒（0~999)
 SYSTEMTIME ENDS
 
 ; Date and time, measured in 100ns intervals
@@ -308,14 +308,14 @@ INPUT_RECORD ENDS
 CloseHandle PROTO,		; close file handle
 	hObject:DWORD
 
-CreateFile PROTO,		; create new file
-	lpFilename:PTR BYTE,		; ptr to filename
-	dwDesiredAccess:DWORD,		; access mode
-	dwShareMode:DWORD,		; share mode
-	lpSecurityAttributes:DWORD,  		; pointer to security attributes
-	dwCreationDisposition:DWORD,		; file creation options
-	dwFlagsAndAttributes:DWORD,		; file attributes
-	hTemplateFile:DWORD		; handle to template file
+CreateFile PROTO,					; 创建新文件
+	lpFilename:PTR BYTE,			; 文件名字符串指针
+	dwDesiredAccess:DWORD,			; 存取模式
+	dwShareMode:DWORD,				; 共享模式
+	lpSecurityAttributes:DWORD,  	; 指向安全属性结构
+	dwCreationDisposition:DWORD,	; 选项，指明文件存在或不存在时的动作
+	dwFlagsAndAttributes:DWORD,		; 文件属性，隐藏、加密、归档、普通、临时等
+	hTemplateFile:DWORD				; 引用的文件句柄，根据引用的文件属性填充当前文件，不用填0
 
 ExitProcess PROTO,                  	; exit program
 	dwExitCode:DWORD		; return code
@@ -341,7 +341,7 @@ FormatMessage PROTO,		; format a message
 FlushConsoleInputBuffer PROTO,		; flush the input buffer
 	hConsoleInput:HANDLE		; standard input handle
 
-GetCommandLine PROTO		; returns pointer to command-line string
+GetCommandLine PROTO		; 返回指向命令行字符串的指针
 
 GetConsoleCP PROTO		; returns code page ID in eax
 
@@ -455,9 +455,10 @@ SetConsoleCursorInfo PROTO,
 	hConsoleOutput:HANDLE,		 ; output handle
 	lpConsoleCursorInfo:PTR CONSOLE_CURSOR_INFO	; cursor information
 
+; 设置光标的X和Y坐标位置
 SetConsoleCursorPosition PROTO,
-	hConsoleOutput:HANDLE,		; output handle
-	dwCursorPosition:COORD		; screen X,Y coordinates
+	hConsoleOutput:HANDLE,		; 输出控制台的句柄
+	dwCursorPosition:COORD		; 屏幕 x y 坐标
 
 SetConsoleMode PROTO,
 	hConsoleHandle:HANDLE,		; output handle
@@ -495,11 +496,11 @@ SystemTimeToFileTime PROTO,		; Convert a SYSTEMTIME structure
 	lpSystemTime:PTR SYSTEMTIME,		; to a FILETIME structure
 	lpFileTime:PTR FILETIME
 
-WriteConsole PROTO,		; write a buffer to the console
-	hConsoleOutput:HANDLE,		; output handle
-	lpBuffer:PTR BYTE,		; pointer to buffer
-	nNumberOfCharsToWrite:DWORD,		; size of buffer
-	lpNumberOfCharsWritten:PTR DWORD,		; ptr to number of bytes written
+WriteConsole PROTO,		; 在控制台窗口中的当前光标位置显示一个字符串并前进光标
+	hConsoleOutput:HANDLE,		; 控制台输出的句柄
+	lpBuffer:PTR BYTE,		; 指向要显示的字符串的指针
+	nNumberOfCharsToWrite:DWORD,		; 指定了要显示的字符串的长度
+	lpNumberOfCharsWritten:PTR DWORD,		; 指向一个整数变量，函数通过该变量返回实际输出的字符数量
 	lpReserved:DWORD		; (not used)
 ; 将一定数量的字符复制到屏幕缓冲区从指定位置开始的连续空间中
 WriteConsoleOutputCharacter PROTO,
