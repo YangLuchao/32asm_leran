@@ -227,6 +227,8 @@ SYSTEMTIME ENDS
 
 ; Date and time, measured in 100ns intervals
 ; since January 1, 1601.
+; 自 1601 年 1 月 1 日起以 100 ns 间隔测量的日期和时间
+; 文件时间结构体
 FILETIME STRUCT
     loDateTime DWORD ?
     hiDateTime DWORD ?
@@ -353,9 +355,10 @@ GetConsoleMode PROTO,
 	hConsoleHandle:HANDLE,		; input or output handle
 	lpMode:PTR DWORD		; pointer to dword containing flags
 
+; 返回控制台窗口当前状态的相关信息
 GetConsoleScreenBufferInfo PROTO,
-	hConsoleOutput:HANDLE,		; handle to screen buffer
-	lpConsoleScreenBufferInfo:PTR CONSOLE_SCREEN_BUFFER_INFO
+	hConsoleOutput:HANDLE,		; 控制台屏幕的句柄
+	lpConsoleScreenBufferInfo:PTR CONSOLE_SCREEN_BUFFER_INFO;指向一个结构的指针
 
 GetFileTime PROTO,		; get date/time stamp of a file
 	hFile:HANDLE,
@@ -413,11 +416,11 @@ HeapSize PROTO,
 LocalFree PROTO,		; free up local memory, using its handle
 	hMem:HANDLE
 	
-MessageBoxA PROTO,		; displays a pop-up message box
-	hWnd:DWORD,		; handle to window (can be null)
-	lpText:PTR BYTE,		; string for inside of dialog box
-	lpCaption:PTR BYTE,		; string for dialog box title
-	uType:DWORD		; contents and behavior of the dialog
+MessageBoxA PROTO,			; displays a pop-up message box
+	hWnd:DWORD,				; 窗口句柄（可以为空）
+	lpText:PTR BYTE,		; 消息框内的字符串指针
+	lpCaption:PTR BYTE,		; 对话框标题字符串
+	uType:DWORD				; 内容和行为类型
 
 PeekConsoleInput PROTO,
 	hConsoleInput:HANDLE,		; input handle
@@ -496,25 +499,27 @@ SystemTimeToFileTime PROTO,		; Convert a SYSTEMTIME structure
 	lpSystemTime:PTR SYSTEMTIME,		; to a FILETIME structure
 	lpFileTime:PTR FILETIME
 
-WriteConsole PROTO,		; 在控制台窗口中的当前光标位置显示一个字符串并前进光标
-	hConsoleOutput:HANDLE,		; 控制台输出的句柄
-	lpBuffer:PTR BYTE,		; 指向要显示的字符串的指针
+; 在控制台窗口中的当前光标位置显示一个字符串并前进光标
+WriteConsole PROTO,		
+	hConsoleOutput:HANDLE,				; 控制台输出的句柄
+	lpBuffer:PTR BYTE,					; 指向要显示的字符串的指针
 	nNumberOfCharsToWrite:DWORD,		; 指定了要显示的字符串的长度
-	lpNumberOfCharsWritten:PTR DWORD,		; 指向一个整数变量，函数通过该变量返回实际输出的字符数量
+	lpNumberOfCharsWritten:PTR DWORD,	; 指向一个整数变量，函数通过该变量返回实际输出的字符数量
 	lpReserved:DWORD		; (not used)
+
 ; 将一定数量的字符复制到屏幕缓冲区从指定位置开始的连续空间中
 WriteConsoleOutputCharacter PROTO,
-	hConsoleOutput:HANDLE,		; 控制台输出句柄
-	lpCharacter:PTR BYTE,		; 字符缓冲区的地址
-	nLength:DWORD,		; 缓冲区的大小
-	dwWriteCoord:COORD,		; 首字符的坐标
+	hConsoleOutput:HANDLE,				; 控制台输出句柄
+	lpCharacter:PTR BYTE,				; 字符缓冲区的地址
+	nLength:DWORD,						; 缓冲区的大小
+	dwWriteCoord:COORD,					; 首字符的坐标
 	lpNumberOfCharsWritten:PTR DWORD	; 实际输出字符的数量
 
 WriteConsoleOutputAttribute PROTO,
-	hConsoleOutput:HANDLE,		; 控制台输出句柄
-	lpAttribute:PTR WORD,		; 属性缓冲区的地址
-	nLength:DWORD,		; 缓冲区的大小
-	dwWriteCoord:COORD,		; 首字符的坐标
+	hConsoleOutput:HANDLE,				; 控制台输出句柄
+	lpAttribute:PTR WORD,				; 属性缓冲区的地址
+	nLength:DWORD,						; 缓冲区的大小
+	dwWriteCoord:COORD,					; 首字符的坐标
 	lpNumberOfAttrsWritten:PTR DWORD	; 实际输出属性的数量
 
 WriteFile PROTO,		; write buffer to output file

@@ -686,20 +686,21 @@ GetDateTime PROC,
 ;--------------------------------------------------
 	pushad
 
-; Get the system local time.
+; 获取本地系统时间
 	INVOKE GetLocalTime,
 	  ADDR sysTime
 
 ; Convert the SYSTEMTIME to FILETIME.
+; 将本地系统时间类型转换为文件时间类型
 	INVOKE SystemTimeToFileTime,
 	  ADDR sysTime,
 	  ADDR flTime
 
-; Copy the FILETIME to a Quadword.
+; 把FILETIME转换成一个64位的整数(时间戳)
 	mov esi,pDateTime
-	mov eax,flTime.loDateTime
+	mov eax,flTime.loDateTime  	; 装入低32位
 	mov DWORD PTR [esi],eax
-	mov eax,flTime.hiDateTime
+	mov eax,flTime.hiDateTime  	; 装入高32位
 	mov DWORD PTR [esi+4],eax
 
 	popad
@@ -714,6 +715,9 @@ GetMaxXY PROC
 ; Returns the current columns (X) and rows (Y) of the console
 ; window buffer. These values can change while a program is running
 ; if the user modifies the properties of the application window.
+; 返回控制台的当前列 x(DL) 和行 y(DH)
+; 窗口缓冲区这些值可以在程序运行时更改
+; 如果用户修改应用程序窗口的属性
 ; Receives: nothing
 ; Returns: DH = rows (Y); DL = columns (X)
 ; (range of each is 1-255)
@@ -721,11 +725,13 @@ GetMaxXY PROC
 ; Added to the library on 10/20/2002, on the suggestion of Ben Schwartz.
 ;----------------------------------------------------------------
 	push eax
-	CheckInit
+	CheckInit	; 校验初始化
 
-	; Get the console buffer size and attributes
+	; 保存全部通用寄存器
 	pushad
+	; 获取控制台信息
 	INVOKE GetConsoleScreenBufferInfo, consoleOutHandle, ADDR bufInfo
+	; 弹出全部通用寄存器
 	popad
 
 	mov dx,bufInfo.dwSize.X
@@ -742,6 +748,7 @@ GetMseconds PROC USES ebx edx
 	LOCAL hours:DWORD, min:DWORD, sec:DWORD
 ;
 Comment !
+返回午夜后经过的毫秒数
 Returns the number of milliseconds that have elapsed past midnight.
 Receives: nothing; Returns: milliseconds
 Implementation Notes:
@@ -751,33 +758,34 @@ DOS-based version, the resolution is 55ms (average).
 
 Last update: 1/30/03
 -----------------------------------------------------------------!
-	pushad
+	pushad		;保存全部通用寄存器
+	; 获取本地系统时间
 	INVOKE GetLocalTime,OFFSET sysTime
-	; convert hours to seconds
-	popad
+	; 小时转换为秒
+	popad 	; 弹出全部寄存器 
 	movzx eax,sysTime.wHour
 	mov   ebx,3600
 	mul   ebx
 	mov   hours,eax
 
-	; convert minutes to seconds
+	; 分钟转换为秒
 	movzx eax,sysTime.wMinute
 	mov   ebx,60
 	mul   ebx
 	mov   min,eax
 
-	; add seconds to total seconds
+	; 加秒
 	movzx eax,sysTime.wSecond
 	mov  sec,eax
 
-	; multiply seconds by 1000
+	; 秒转毫秒
 	mov  eax,hours
 	add  eax,min
 	add  eax,sec
 	mov  ebx,1000
 	mul  ebx
 
-	; add milliseconds to total
+	; 再加毫秒
 	movzx ebx,sysTime.wMilliseconds
 	add  eax,ebx
 
@@ -789,20 +797,21 @@ GetMseconds ENDP
 GetTextColor PROC
 	LOCAL bufInfo:CONSOLE_SCREEN_BUFFER_INFO
 ;
-;
+; 获取控制台窗口颜色属性
+; ah(背景颜色)，al(前景颜色)
 ; Get the console window's color attributes. 
 ; Receives: nothing
 ; Returns: AH = background color, AL = foreground 
 ;   color 
 ;--------------------------------------------------
 
-	pushad
-	CheckInit
+	pushad		; 保存全部寄存器
+	CheckInit	; 校验初始化 
 
 	; Get the console buffer size and attributes
 	INVOKE GetConsoleScreenBufferInfo, consoleOutHandle, ADDR bufInfo
-	popad
-	
+	popad 		;弹出全部寄存器
+	; 窗口的属性
 	mov  ax,bufInfo.wAttributes
 	ret
 GetTextColor ENDP
@@ -812,22 +821,26 @@ GetTextColor ENDP
 Gotoxy PROC
 ;
 ; Locate the cursor
+; 定位光标
+; dh,行。dl,列
 ; Receives: DH = screen row, DL = screen column
 ; Last update: 7/11/01
 ;--------------------------------------------------------
 .data
+; 定义常量，光标位置
 _cursorPosition COORD <>
 .code
-	pushad
+	pushad	; 保护全部通用寄存器
 
-	CheckInit	; was console initialized?
-	movzx ax,dl
-	mov _cursorPosition.X, ax
-	movzx ax,dh
-	mov _cursorPosition.Y, ax
+	CheckInit	; 初始化
+	movzx ax,dl ; 行
+	mov _cursorPosition.X, ax;行
+	movzx ax,dh ; 列
+	mov _cursorPosition.Y, ax;列
+	; 设置控制台光标光标位置
 	INVOKE SetConsoleCursorPosition, consoleOutHandle, _cursorPosition
 
-	popad
+	popad 	; 弹出全部通用寄存器
 	ret
 Gotoxy ENDP
 
@@ -860,12 +873,13 @@ Initialize ENDP
 
 ;-----------------------------------------------
 IsDigit PROC
-;
+; 确定 al 中的字符是否为有效的十进制数字
 ; Determines whether the character in AL is a
 ; valid decimal digit.
 ; Receives: AL = character
 ; Returns: ZF=1 if AL contains a valid decimal
 ;   digit; otherwise, ZF=0.
+; zf=1是，zf=0不是
 ;-----------------------------------------------
 	 cmp   al,'0'
 	 jb    ID1
@@ -878,8 +892,10 @@ IsDigit ENDP
 
 ;-----------------------------------------------
 MsgBox PROC
-;
+; 显示弹出消息框
 ; Displays a popup message box.
+; 参数： edx = 需要展示的消息的地址
+; 		ebx = 需要展示的标题的地址，0表示没有地址
 ; Receives: EDX = offset of message, EBX = 
 ; 	offset of caption (or 0 if no caption)
 ; Returns: nothing
@@ -910,11 +926,14 @@ MsgBoxAsk PROC uses ebx ecx edx esi edi
 ; Returns: EAX equals IDYES (6) or IDNO (7).
 ;--------------------------------------------------
 .data
+; 默认的标题
 @zq02abc_def_caption BYTE " ",0
 .code
+	; 如果标题为空，传默认标题
 	.IF ebx == NULL
 	  mov  ebx,OFFSET @zq02abc_def_caption
 	.ENDIF
+	; yes/no按钮、问题图标
 	INVOKE MessageBox, NULL, edx, ebx, 
 		MB_YESNO + MB_ICONQUESTION
 		
@@ -924,9 +943,11 @@ MsgBoxAsk ENDP
 
 ;------------------------------------------------------
 OpenInputFile PROC
-;
+; 打开一个已存在的文件
 ; Opens an existing file for input.
+; 参数：edx文件名
 ; Receives: EDX points to the filename.
+; 返回，如果成功，eax=文件句柄，如果失败，eax=INVALID_HANDLE_VALUE
 ; Returns: If the file was opened successfully, EAX 
 ; contains a valid file handle. Otherwise, EAX equals 
 ; INVALID_HANDLE_VALUE.
@@ -948,18 +969,24 @@ ParseDecimal32 PROC USES ebx ecx edx esi
 ; integer, and converts it to binary. All valid digits occurring 
 ; before a non-numeric character are converted. 
 ; Leading spaces are ignored.
-
+; converts 解析包含无符号十进制整数的字符串并将其转换为二进制 
+; 在转换非数字字符之前出现的所有有效数字前导空格将被忽略
+; 接收：edx=需要转换的字符串，edx=转换的长度
 ; Receives: EDX = offset of string, ECX = length 
 ; Returns:
+;	字符为空，eax=0 cf=1
 ;  If the integer is blank, EAX=0 and CF=1
+; 	字符只包含空格 eax=0 cf=1
 ;  If the integer contains only spaces, EAX=0 and CF=1
+;  字符溢出 eax=0 cf=1
 ;  If the integer is larger than 2^32-1, EAX=0 and CF=1
+;  其他正常转换，cf=0
 ;  Otherwise, EAX=converted integer, and CF=0
 ;
 ; Created 7/15/05 (from the old ReadDec procedure)
 ;--------------------------------------------------------
 
-	mov   esi,edx           		; save offset in ESI
+	mov   esi,edx           	; save offset in ESI
 
 	cmp   ecx,0            		; length greater than zero?
 	jne   L1              		; yes: continue
@@ -1171,15 +1198,16 @@ Random32  PROC
 ; Last update: 7/11/01
 ;--------------------------------------------------------------
 .data
+; 随机种子
 seed  DWORD 1
 .code
-	  push  edx
-	  mov   eax, 343FDh
-	  imul  seed
-	  add   eax, 269EC3h
-	  mov   seed, eax    ; save the seed for the next call
-	  ror   eax,8        ; rotate out the lowest digit (10/22/00)
-	  pop   edx
+	  push  edx				;保存edx
+	  mov   eax, 343FDh 	;固定数
+	  imul  seed 			;乘以种子
+	  add   eax, 269EC3h 	;再加一个固定数
+	  mov   seed, eax    	;再将这个和保存为种子，方便下一个调用
+	  ror   eax,8        	;再按位右循环8位
+	  pop   edx 			;弹出edx
 
 	  ret
 Random32  ENDP
@@ -1193,17 +1221,17 @@ RandomRange PROC
 ; EAX = n.
 ; Last update: 09/06/2002
 ;--------------------------------------------------------------
-	 push  ebx
+	 push  ebx 		;保存寄存器
 	 push  edx
 
-	 mov   ebx,eax  ; maximum value
-	 call  Random32 ; eax = random number
-	 mov   edx,0
-	 div   ebx      ; divide by max value
-	 mov   eax,edx  ; return the remainder
+	 mov   ebx,eax  ; 最大值挪到ebx中
+	 call  Random32 ; 求个随机数
+	 mov   edx,0 	; edx清空
+	 div   ebx      ; 除以最大值
+	 mov   eax,edx  ; 将余数挪入到eax中
 
 	 pop   edx
-	 pop   ebx
+	 pop   ebx 		;弹出寄存器
 
 	 ret
 RandomRange ENDP
@@ -1211,16 +1239,17 @@ RandomRange ENDP
 
 ;--------------------------------------------------------
 Randomize PROC
-;
+; 获取随机数种子
 ; Re-seeds the random number generator with the current time
 ; in seconds.
 ; Receives: nothing
 ; Returns: nothing
 ; Last update: 09/06/2002
 ;--------------------------------------------------------
-	  pushad
-
+	  pushad	; 保护全部通用寄存器
+	  ; 获取本地系统时间
 	  INVOKE GetSystemTime,OFFSET sysTime
+	  ; 保存随机种子
 	  movzx eax,sysTime.wMilliseconds
 	  mov   seed,eax
 
@@ -1239,7 +1268,7 @@ ReadChar PROC USES ebx edx
 ; Last update: 7/6/05
 ;----------------------------------------------------------
 
-L1:	mov  eax,10	; give Windows 10ms to process messages
+L1:	mov  eax,10	; 给 windows 10 ms 来处理消息
 	call Delay
 	call ReadKey	; look for key in buffer
 	jz   L1	; no key in buffer if ZF=1

@@ -185,7 +185,7 @@ INVOKE GetStdHandle,STD_INPUT_HANDLE
 
 ```assembly
 MessageBoxA PROTO,
-		hWnd:DWORD,		;窗口句柄（可以为空）
+		hWnd:DWORD,				;窗口句柄（可以为空）
 		lpText:PTR BYTE,		;消息框内的字符串
 		lpCaption:PTR BYTE,		;对话框标题字符串
 		uType:DWORD				;内容和行为类型
@@ -214,9 +214,9 @@ uType参数是一个位映射整数，包含了三类选项：要显示的按钮
 有4类图标可以选用，有时候多个常量表示同样的图标：
 
 - 停止标志：MB_ICONSTOP,MB_ICONHAND和MB_ICONERROR。
-- 问号（?):MB_ICONQUESTION。
-- 信息（i):MB_ICONINFORMATION,MB_ICONASTERISK。
-- 惊叹号（!):MB_ICONEXCLAMATION,MB_ICONWARNING。
+- 问号(?):MB_ICONQUESTION。
+- 信息(i):MB_ICONINFORMATION,MB_ICONASTERISK。
+- 惊叹号(!):MB_ICONEXCLAMATION,MB_ICONWARNING。
 
 #### 返回值
 
@@ -1020,7 +1020,7 @@ Get ConsoleScreenButferInfo PROTO,
 下面是CONSOLE_SCREEN_BUFFER_INFO结构的定义：
 
 ```assembly
-CONSOLE SCREEN_BUFFER_INFO STRUCT
+CONSOLE_SCREEN_BUFFER_INFO STRUCT
 	dwSize				COORD 	<>
 	dwCursorPosition	COORD 	<>
 	wAttributes			WORD	?
