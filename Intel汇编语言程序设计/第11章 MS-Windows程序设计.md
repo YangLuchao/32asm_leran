@@ -95,9 +95,9 @@ WriteConsole EQU <WriteConsoleA>
 
 在文档中，Windows API函数的声明以C/C++的语法形式出现，在这些声明中，所有函数的参数类型都是基于标准C的数据类型或者Windows的预定义类型的（如表11.1所示）。正确区数据类型中的数据值和数据值指针是很重要的，这些数据类型中以LP开头的都是指向其他对象的长指针。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.7rcx4uuytu8.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.7rcx4uuytu8.webp)
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.71cxmo2110s0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.71cxmo2110s0.webp)
 
 ### SmallWin.inc包含文件
 
@@ -175,9 +175,9 @@ INVOKE GetStdHandle,STD_INPUT_HANDLE
 提示：Win32API函数不保护EAX,EBX,ECX,EDX寄存器，因此必须自己保护这些
 寄存器。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.36kh5u8pnsu0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.36kh5u8pnsu0.webp)
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.o80ht4rc7qo.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.o80ht4rc7qo.webp)
 
 ## 11.1.3 显示消息框
 
@@ -224,9 +224,9 @@ uType参数是一个位映射整数，包含了三类选项：要显示的按钮
 IDOK,IDRETRY,IDTRYAGAIN和IDYES。所有这些常量都在SmallWin.inc中定义了。
 SmallWin.inc把MessageBoXA重新定义为MessageBox,后者看起来对用户更友好一些。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.wbnwpa5rg5c.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.wbnwpa5rg5c.webp)
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2g57rwxy4nbw.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.2g57rwxy4nbw.webp)
 
 #### 程序清单
 
@@ -430,7 +430,7 @@ Irvine32库中键盘相关的过程：Irvine32库中有两个与键盘相关的�
 
 ReadKey过程返回时，如果AL中返回的是0,则表明按下的是一个特殊的键（功能键、光标键等）,AH寄存器中包含了按键的扫描码，在本书的前言部分可以找到特殊按键的扫描码表。DX中包含了虚拟键码，EBX包含了键盘控制键的状态信息。在调用ReadKey后，可以使用TEST指令检查各个特殊键的值。ReadKey的实现有点穴长，这里就不再重复给出其代码了，感兴趣的读者可自行查阅\Examples\Lib32目录下的Irvine32.asm文件中的相应代码。键盘控制键的状态值如表11.3所示。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.9xu1sb87b4w.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.9xu1sb87b4w.webp)
 
 #### ReadKey测试程序
 
@@ -469,7 +469,7 @@ GetKeyState PROTO, nVirtKey: DWORD
 
 调用GetKeyState时，应传递一个要检查按键的虚拟键码，在函数返回后，应测试EAX中的相应位是否置位了。一些虚拟键码值以及应检查的对应数据位如表11.4所示。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.5h1r9dqxpvo0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.5h1r9dqxpvo0.webp)
 
 下面的例子程序演示了GetKeyState的用法，程序检查了NumLock和左Shift按键的状态：
 
@@ -618,17 +618,17 @@ CreateFile PROTO,			;创建新文件或打开已存在的文件
 
 函数的参数如表11.5所示。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.e9welshjbe0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.e9welshjbe0.webp)
 
 ### dwDesiredAccess:
 
 通过设置 dwDesiredAccess参数，可以选择读模式、写模式、读写模式或者设备查询模式。可以同时选择表11.6列出的各种模式，当然还可以同时再加上很多未列在表中的标志位（在Platform SDK文档中搜索CreateFile):
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6xj6l6s4vf00.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.6xj6l6s4vf00.webp)
 
 dwCreationDisposition:当文件已经存在或者不存在时，dwCreationDisposition参数指定了要采取何种动作，参数必须指定为表11.7中所列的一种。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6nev6lfoksc0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.6nev6lfoksc0.webp)
 
 表11.8列出了dwflagsAndAttributes参数最常用的取值（完整的取值列表可在Platform SDK文档中查询CreateFile)。这些取值可以组合起来使用，只不过任何其他的标志都会覆盖掉FILE_ATTRIBUTE_NORMAL属性。这些属性值都是2的暴值，因此可以使用汇编时的OR操作符或+操作符把多个标志组合成一个参数：
 
@@ -637,7 +637,7 @@ FILE_ATTRIBUTE_HIDDENORFILE_ATTRIBUTE_READONLY
 FILE_ATTRIBUTE_HIDDEN+FILE_ATTRIBUTE_READONLY
 ```
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.4sdbe7zjg3k0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.4sdbe7zjg3k0.webp)
 
 #### 例子
 
@@ -985,7 +985,7 @@ Error: Buffer too small for the file
 
 通过Win32API可以对控制台窗口及其缓冲区进行非常多的控制操作，图11.1表明屏幕缓冲区有可能大于控制台窗口当前显示的行数。控制台窗口就像一个“视图”，仅仅显示部分缓冲区的内容。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.7ctznw0j1yg0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.7ctznw0j1yg0.webp)
 
 有几个函数可以影响控制台窗口以及它在与之关联的屏幕缓冲区中的位置：
 
@@ -1041,7 +1041,7 @@ dwSize字段中返回屏幕缓冲区的大小，它们是以字符数为单位�
 
 图11.2是Microsoft Visual Studio的调试器里面显示的该数据结构的图例。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.ay61mwxq3s8.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.ay61mwxq3s8.webp)
 
 ### SetConsoleWindowInfo函数
 
@@ -1228,13 +1228,13 @@ main PROC
 END main
 ```
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2y8gg5hkvk80.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.2y8gg5hkvk80.webp)
 
 ## 11.1.12 时间和日期函数
 
 Win32 API提供了大量的时间和日期函数。对于初学者来说，可以用它们来获取或者设置当前日期和时间。本节的内容仅仅示范了一小部分的时间和日期函数，读者可以查阅Platform SDK文档，进一步了解表11.9中列出的这些函数。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.12j9xj9dwx5s.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.12j9xj9dwx5s.webp)
 
 #### SYSTEMTIME结构
 
@@ -1389,7 +1389,7 @@ GetDateTime ENDP
 在本节中，我们来演示如何写出一个简单的Windows下的图形界面应用程序，这个程序将创建并显示一个主窗口，显示一些消息框，而且可以响应鼠标动作。下面的内容仅仅是一个简要的介绍，因为即使是要描述清楚一个最简单的Windows应用程序中的事件，也需要至少一整章的篇幅。如果读者需要更详尽的信息，请参阅Platform SDK的文档。另一份很好的文献资料是Charles Petzold所著的Programming in Windows:The Definitive Guide to the Win32API一书。
 表11.10列出了构建该程序时使用的各种库和包含文件，可以使用本书附带代码Examples\Ch11\WinApp目录下的Visual Studio项目文件构建和运行该程序。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.13fklegj2v1c.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.13fklegj2v1c.webp)
 
 编译时应使用选项/SUBSYSTEM:WINDOWS代替我们在前面章节中使用的/SUBSYSTEM:CONSOLE选项。程序调用了两个标准Windows库文件：kernel32.lib和user32.lib文件。
 
@@ -1398,7 +1398,7 @@ GetDateTime ENDP
 程序将显示一个填满整个屏幕的主窗口。下面的图例已经缩小了，以便于在书
 中印刷。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2xzsij2i78s0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.2xzsij2i78s0.webp)
 
 ## 11.2.1 必须了解的数据结构
 
@@ -1528,7 +1528,7 @@ WinProc PROC,
 
 用户看到的结果如图11.5所示。任何我们不想处理的消息都应该传递给Windows的默认消息处理函数DefWindowProc。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.7klq61u7f740.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.7klq61u7f740.webp)
 
 ## 11.2.5 ErrorHandler 过程
 
@@ -1738,23 +1738,23 @@ END WinMain
 
 程序运行的时候首先显示下面的消息框：
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.3ni2fbm4tlc0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.3ni2fbm4tlc0.webp)
 
 当用户按下了OK按钮来关闭这个ApplicationLoaded(程序已加载）消息框后，另一个消息框将会弹出：
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.75oi9fuxs2c0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.75oi9fuxs2c0.webp)
 
 这是Main Window Active(主窗口激活）消息框，按OK按钮关闭它以后，程序的主窗口就显示出来了：
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.32xbm6q2ybu0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.32xbm6q2ybu0.webp)
 
 当用户在主窗口的任何地方按下鼠标左键的时候，程序会显示下面的消息框：
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.wh6etqjxfq8.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.wh6etqjxfq8.webp)
 
 当用户按下主窗口右上角的X按钮来关闭对话框的时候，窗口关闭之前会显示下面的消息框：
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.24j4ym8brwxs.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.24j4ym8brwxs.webp)
 
 当用户关闭了这个消息框以后，程序结束运行。
 
@@ -1779,7 +1779,7 @@ C/C++和Java都有内建的运行时堆管理器，用于处理程序的存储�
 汇编语言可通过多种方式进行动态内存分配：第一种方式是通过系统调用让操作系统为其分配内存块，第二种方式是实现字节堆管理器以处理小对象的内存分配请求。本节讲述如何使用一种方法，例子程序都是32位的保护模式应用程序。
 使用表11.11中列出的Windows API函数请求MS-Windows分配不同大小的内存块，表中所有的函数都会改写通用寄存器，因此可能需要封装这些函数以保护重要的寄存器。要想了解更关于内存管理方面的内容，请在Platform SDK文档中搜索“Memory Management Reference”。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.c8jln1p0lz4.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.c8jln1p0lz4.webp)
 
 ### GetProcessHeap
 
@@ -2106,11 +2106,11 @@ END main
 ==分页机制是IA-32系列处理器的一个重要特征，它使得计算机同时在内存中运行原本无法装人的一堆程序成为可能。在一开始，处理器仅仅装入程序的一部分，剩余的部分保留在磁盘上面。程序要用到的内存被划分成称为页的小块，通常每块的大小为4KB。运行每个程序的时候，处理器有选择地在内存中释放一些不用的页面，然后装入其他马上要被用到的页面==
 ==操作系统使用一个页目录和一系列的页表来追踪内存中所有程序的页面使用情况。当一个程序尝试访问线性地址空间中的某个地址的时候，处理器自动把线性地址转换成物理地址，这个转换就称为页面转换。==如果需要的页面尚未在内存中，处理器打断程序的执行并引发一个页错误，操作系统捕获这个错误并在程序恢复运行前把所需的页面从磁盘复制到内存中。从应用程序的角度来看，页错误和页面转换是自动发生的。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.6i63zh0ppzk0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.6i63zh0ppzk0.webp)
 
 举例来说，读者可以在Windows2000中打开任务管理器程序并看看其中显示的物理内存和虚拟内存之间的差别。图11.7显示了一个装有256MB物理内存的计算机的情况。当前使用中的虚拟内存的总数量显示在任务管理器的Commit Charge一栏中，请注意图中显示的最大可用虚拟内存为633MB,明显大于计算机的物理内存数量。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.2qzq2lfe70g0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.2qzq2lfe70g0.webp)
 
 ### 描述符表
 
@@ -2124,7 +2124,7 @@ END main
 
 ==在一个多任务的操作系统中，每个程序或任务都有它自己的段描述符表，这个表称为局部描述符表(LDT)。当前程序的LDT的基址存放在LDTR(局部描述符表寄存器）中。每个段描述符都包含了段在线性地址空间中的基址。==如图11.8所示，一个段和其他段通常是不同的。图中显示了三个不同的逻辑地址，每个地址分别对应于LDT中的不同表项。在这个例子中，我们假设分页机制是关闭的，所以线性地址空间也就是物理地址空间。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.zbvjdlbccw0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.zbvjdlbccw0.webp)
 
 ### 段描述符的细节
 
@@ -2168,7 +2168,7 @@ END main
 为了简单起见，在接下来的讨论中假设使用4KB的页。
 ==一个线性地址可以被划分为三个部分：指向页目录的指针、指向页表的指针和在页中的偏移地址。==页目录的起始地址存放在控制寄存器（CR3)中。如图11.9所示，当线性地址被转换到物理地址的时候，处理器执行了以下的步骤。
 
-![image](https://cdn.staticaly.com/gh/YangLuchao/img_host@master/20230301/image.576ef8n0lis0.webp)
+![image](https://github.com/YangLuchao/img_host/raw/master/20230301/image.576ef8n0lis0.webp)
 
 1. ==线性地址代表线性地址空间中的一个位置。==
 2. ==以线性地址中10位的页目录域作为索引，从页目录表中得到页表入口项，页表入口项中包含了页表的基址==。
